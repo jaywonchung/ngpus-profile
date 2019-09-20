@@ -1,6 +1,11 @@
 #! /usr/bin/bash
 set -e
 
+exec 3>&1 4>&2
+trap 'exec 2>&4 1>&3' 0 1 2 3
+exec 1>/local/repository/log.out 2>&1
+# Everything below will go to the file 'log.out':
+
 TARGET_USER=${1:-peifeng}
 TARGET_GROUP=$(id -gn $TARGET_USER)
 TARGET_HOME=$(eval echo "~$TARGET_USER")
@@ -47,6 +52,7 @@ done
 # update repo
 if [[ -d /local/repository ]]; then
     cd /local/repository
+    git checkout master
     git pull
 fi
 
