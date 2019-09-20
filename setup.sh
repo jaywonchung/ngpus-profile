@@ -50,7 +50,8 @@ date > /local/repository/.setup-done
 
 # base software
 sudo apt-get update
-sudo apt-get install -y zsh fonts-powerline git tmux neovim python3-neovim build-essentials gawk
+sudo apt-get install -y zsh fonts-powerline git tmux neovim python3-neovim build-essential cmake gawk
+sudo apt-get autoremove -y
 
 echo "Setting default shell to zsh"
 sudo usermod -s /usr/bin/zsh $TARGET_USER
