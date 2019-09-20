@@ -44,6 +44,12 @@ for exe in vi vim editor; do
     sudo update-alternatives --install /usr/bin/$exe $exe /usr/bin/nvim 60
 done
 
+# update repo
+if [[ -d /local/repository ]]; then
+    cd /local/repository
+    git pull
+fi
+
 # dotfiles
 make_dir $TARGET_HOME/.local
 link_files $CONFIG_DIR/dotfiles/home $TARGET_HOME "."
