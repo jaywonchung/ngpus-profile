@@ -1,11 +1,6 @@
 #! /bin/bash
 set -e
 
-if [[ -f /local/repository/.setup-done ]]; then
-    exit
-fi
-touch /local/repository/.setup-done
-
 TARGET_USER=${1:-peifeng}
 TARGET_GROUP=$(id -gn $TARGET_USER)
 TARGET_HOME=$(eval echo "~$TARGET_USER")
@@ -38,18 +33,34 @@ link_files() {
     done
 }
 
+# whoami
+echo "Running as $(whoami) with groups ($(groups)), targeting user $TARGET_USER:$TARGET_GROUP"
+
+# i am root now
+if [[ $EUID -ne 0 ]]; then
+    echo "Escalating to root with sudo"
+    exec sudo /bin/bash "$0" "$@"
+fi
+
+# am i done
+if [[ -f /local/repository/.setup-done ]]; then
+    exit
+fi
+date > /local/repository/.setup-done
+
 # base software
 sudo apt-get update
 sudo apt-get install -y zsh fonts-powerline git tmux neovim python3-neovim
 
-echo "Set default shell to zsh"
+echo "Setting default shell to zsh"
 sudo usermod -s /usr/bin/zsh $TARGET_USER
-echo "Set default editor to neovim"
+echo "Setting default editor to neovim"
 for exe in vi vim editor; do
     sudo update-alternatives --install /usr/bin/$exe $exe /usr/bin/nvim 60
 done
 
 # update repo
+echo "Updating profile repo"
 if [[ -d /local/repository ]]; then
     cd /local/repository
     git checkout master
@@ -57,6 +68,7 @@ if [[ -d /local/repository ]]; then
 fi
 
 # dotfiles
+echo "Linking dotfiles"
 make_dir $TARGET_HOME/.local
 link_files $CONFIG_DIR/dotfiles/home $TARGET_HOME "."
 ln -sf $CONFIG_DIR/dotfiles/scripts $TARGET_HOME/.local/bin
@@ -67,6 +79,7 @@ make_dir $TARGET_HOME/downloads
 make_dir $TARGET_HOME/buildbed
 
 # python
+echo "Setting up python"
 curl -JOL 'https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh'
 bash Miniconda3-latest-Linux-x86_64.sh -b -p $TARGET_HOME/tools/miniconda3
 rm Miniconda3-latest-Linux-x86_64.sh
@@ -74,3 +87,7 @@ $TARGET_HOME/tools/miniconda3/bin/conda install --yes pip pytorch
 
 # install project specific
 $TARGET_HOME/tools/miniconda3/bin/pip install -r /proj/gaia-PG0/peifeng/automl/Auto-PyTorch/requirements.txt
+
+# fix permission
+echo "Fixing permission"
+chown -R $TARGET_USER:$TARGET_GROUP $TARGET_HOME
