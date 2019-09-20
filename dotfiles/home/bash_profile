@@ -1,0 +1,13 @@
+# .bash_profile
+
+# Get the aliases and functions
+if [ -f ~/.bashrc ]; then
+	. ~/.bashrc
+fi
+
+# Source completion
+if [ -d ~/.bash_completion.d ]; then
+	for bcfile in ~/.bash_completion.d/*; do
+		. $bcfile
+	done
+fi
