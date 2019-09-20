@@ -11,7 +11,7 @@ import geni.rspec.pg as rspec
 pc = portal.Context()
 pc.defineParameter("num_nodes", "Number of nodes", portal.ParameterType.INTEGER, 5, [])
 pc.defineParameter("setup", "name of setup script, relative to proj_root",
-                   portal.ParameterType.STRING, "setup-cloudlab.sh")
+                   portal.ParameterType.STRING, "setup.sh")
 
 request = pc.makeRequestRSpec()
 lan = request.LAN("lan")
