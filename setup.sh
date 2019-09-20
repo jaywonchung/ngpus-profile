@@ -1,10 +1,10 @@
-#! /usr/bin/bash
+#! /bin/bash
 set -e
 
-exec 3>&1 4>&2
-trap 'exec 2>&4 1>&3' 0 1 2 3
-exec 1>/local/repository/log.out 2>&1
-# Everything below will go to the file 'log.out':
+if [[ -f /local/repository/.setup-done ]]; then
+    exit
+fi
+touch /local/repository/.setup-done
 
 TARGET_USER=${1:-peifeng}
 TARGET_GROUP=$(id -gn $TARGET_USER)
