@@ -50,7 +50,7 @@ date > /local/repository/.setup-done
 
 # base software
 sudo apt-get update
-sudo apt-get install -y zsh fonts-powerline git tmux neovim python3-neovim build-essential cmake gawk
+sudo apt-get install -y zsh fonts-powerline git tmux neovim python3-neovim build-essential cmake gawk htop
 sudo apt-get autoremove -y
 
 echo "Setting default shell to zsh"
@@ -96,7 +96,7 @@ echo "Setting up python"
 curl -JOL 'https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh'
 bash Miniconda3-latest-Linux-x86_64.sh -b -p $TARGET_HOME/tools/miniconda3
 rm Miniconda3-latest-Linux-x86_64.sh
-$TARGET_HOME/tools/miniconda3/bin/conda install --yes pip pytorch
+$TARGET_HOME/tools/miniconda3/bin/conda install --yes pip pytorch ipython jupyter jupyterlab
 
 # install project specific
 $TARGET_HOME/tools/miniconda3/bin/pip install -r /proj/gaia-PG0/peifeng/automl/Auto-PyTorch/requirements.txt
