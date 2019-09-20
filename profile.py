@@ -10,7 +10,7 @@ import geni.rspec.pg as rspec
 
 pc = portal.Context()
 pc.defineParameter("num_nodes", "Number of nodes", portal.ParameterType.INTEGER, 5, [])
-pc.defineParameter("setup", "name of setup script, relative to proj_root",
+pc.defineParameter("setup", "name of setup script",
                    portal.ParameterType.STRING, "setup.sh")
 
 request = pc.makeRequestRSpec()
