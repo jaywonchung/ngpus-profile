@@ -261,9 +261,6 @@ fi
   # no newline before each prompt
   typeset -g POWERLEVEL9K_PROMPT_ADD_NEWLINE=true
 
-  # use our own gitstatus compilation
-  typeset -g POWERLEVEL9K_GITSTATUS_DIR=$ZPLUG_REPOS/romkatv/gitstatus
-
   # limit the number of threads gitstatus may start
   typeset -g GITSTATUS_NUM_THREADS=32
 

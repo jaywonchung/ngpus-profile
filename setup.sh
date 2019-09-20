@@ -50,7 +50,7 @@ date > /local/repository/.setup-done
 
 # base software
 sudo apt-get update
-sudo apt-get install -y zsh fonts-powerline git tmux neovim python3-neovim
+sudo apt-get install -y zsh fonts-powerline git tmux neovim python3-neovim build-essentials gawk
 
 echo "Setting default shell to zsh"
 sudo usermod -s /usr/bin/zsh $TARGET_USER
@@ -58,6 +58,18 @@ echo "Setting default editor to neovim"
 for exe in vi vim editor; do
     sudo update-alternatives --install /usr/bin/$exe $exe /usr/bin/nvim 60
 done
+
+# additional software
+curl -s https://api.github.com/repos/BurntSushi/ripgrep/releases/latest |
+    grep -oP "browser_download_url.*\Khttp.*amd64.deb" |
+    xargs -n 1 curl -JL -o install.deb &&
+    dpkg -i install.deb &&
+    rm install.deb
+curl -s https://api.github.com/repos/sharkdp/fd/releases/latest |
+    grep -oP "browser_download_url.*\Khttp.*amd64.deb" |
+    xargs -n 1 curl -JL -o install.deb &&
+    dpkg -i install.deb &&
+    rm install.deb
 
 # update repo
 echo "Updating profile repo"

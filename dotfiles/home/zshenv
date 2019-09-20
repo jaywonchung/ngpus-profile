@@ -63,10 +63,15 @@ function autodetect_path() {
 
 # introduce an anonymous function just for scroping
 () {
+    # Fix TERM
+    if [[ $TERM == "konsole" ]]; then
+        export TERM=konsole-256color
+    fi
     # Basic locations
     export DOWNLOAD_DIR=$HOME/downloads
     export BUILD_DIR=$HOME/buildbed
     export TOOL_DIR=$HOME/tools
+    export PROJ_DIR=/proj/gaia-PG0/peifeng/automl
 
     # Basic preference
     export EDITOR=vim

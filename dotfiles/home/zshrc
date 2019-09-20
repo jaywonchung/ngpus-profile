@@ -5,7 +5,7 @@ fi
 # Check if zplug is installed
 if [[ ! -d ~/.zplug ]]; then
     git clone https://github.com/zplug/zplug ~/.zplug
-    source ~/.zplug/init.zsh && zplug update --self
+    source ~/.zplug/init.zsh
 fi
 
 # only clone 1 level is enough
@@ -33,18 +33,12 @@ zplug "junegunn/fzf-bin", \
     from:gh-r, \
     as:command, \
     rename-to:fzf, \
-    use:"*linux*ppc64le*", \
+    use:"*linux*amd64*", \
     on:"junegunn/fzf"
 
 # Powerlevel10k prompt, with fast gitstatus, config is in ~/.zsh/config.d/purepower.zsh
 zplug "romkatv/powerlevel10k", \
-    use:"powerlevel10k.zsh-theme"
-# We have to build gitstatus ourself
-zplug "romkatv/gitstatus", \
-    as:command, \
-    use:"bin/gitstatusd-linux-ppc64le", \
-    hook-build: "zsh ~/.zsh/build-gitstatus", \
-    on:"romkatv/powerlevel10k"
+    as:theme
 
 # (If the defer tag is given 2 or above, run after compinit command)
 zplug "zdharma/fast-syntax-highlighting", defer:2
