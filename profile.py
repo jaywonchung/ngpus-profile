@@ -49,7 +49,7 @@ nfsServer.addService(rspec.Execute(shell="sh", command="sudo /bin/bash /local/re
 
 # Special node that represents the ISCSI device where the dataset resides
 dsnode = request.RemoteBlockstore("dsnode", nfsDirectory)
-dsnode.dataset = "urn:publicid:IDN+emulab.net:portalprofiles+ltdataset+DemoDataset"
+dsnode.dataset = params.dataset
 dslink = request.Link("dslink")
 dslink.addInterface(dsnode.interface)
 dslink.addInterface(nfsServer.addInterface())
