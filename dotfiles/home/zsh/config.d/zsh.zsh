@@ -27,6 +27,10 @@ setopt HIST_VERIFY               # Don't execute immediately upon history expans
 autoload -U select-word-style
 select-word-style bash
 
+# use paste escape sequence
+autoload -Uz bracketed-paste-magic
+zle -N bracketed-paste bracketed-paste-magic
+
 # A fancier eol mark
 export PROMPT_EOL_MARK=$'\u23ce'  # ⏎
 

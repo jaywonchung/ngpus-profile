@@ -96,10 +96,13 @@ echo "Setting up python"
 curl -JOL 'https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh'
 bash Miniconda3-latest-Linux-x86_64.sh -b -p $TARGET_HOME/tools/miniconda3
 rm Miniconda3-latest-Linux-x86_64.sh
-$TARGET_HOME/tools/miniconda3/bin/conda install --yes pip pytorch ipython jupyter jupyterlab
+$TARGET_HOME/tools/miniconda3/bin/conda install --yes pip ipython jupyter jupyterlab
+$TARGET_HOME/tools/miniconda3/bin/conda install --yes pytorch torchvision cudatoolkit=10.0 -c pytorch
 
 # install project specific
 $TARGET_HOME/tools/miniconda3/bin/pip install -r /proj/gaia-PG0/peifeng/automl/Auto-PyTorch/requirements.txt
+$TARGET_HOME/tools/miniconda3/bin/pip install openml matplotlib
+$TARGET_HOME/tools/miniconda3/bin/pip install -e /proj/gaia-PG0/peifeng/automl/Auto-PyTorch/
 
 # fix permission
 echo "Fixing permission"

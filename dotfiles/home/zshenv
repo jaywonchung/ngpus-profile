@@ -67,11 +67,14 @@ function autodetect_path() {
     if [[ $TERM == "konsole" ]]; then
         export TERM=konsole-256color
     fi
+    if [[ $TERM == "tmux" ]]; then
+        export TERM=tmux-256color
+    fi
     # Basic locations
     export DOWNLOAD_DIR=$HOME/downloads
     export BUILD_DIR=$HOME/buildbed
     export TOOL_DIR=$HOME/tools
-    export PROJ_DIR=/proj/gaia-PG0/peifeng/automl
+    export PROJ_DIR=/nfs/Auto-PyTorch
 
     # Basic preference
     export EDITOR=vim

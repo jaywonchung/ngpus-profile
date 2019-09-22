@@ -43,9 +43,6 @@ zplug "romkatv/powerlevel10k", \
 # (If the defer tag is given 2 or above, run after compinit command)
 zplug "zdharma/fast-syntax-highlighting", defer:2
 
-# Safe paste
-zplug "oz/safe-paste"
-
 # Install plugins if there are plugins that have not been installed
 zplug check || zplug install
 
