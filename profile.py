@@ -25,7 +25,7 @@ pc.defineParameter("osImage", "Select OS image",
                    imageList[0], imageList, advanced=True)
 pc.defineParameter("dataset", "Dataset backing the NFS storage",
                    portal.ParameterType.STRING,
-                   "urn:publicid:IDN+emulab.net:portalprofiles+ltdataset+DemoDataset", advanced=True)
+                   "urn:publicid:IDN+clemson.cloudlab.us:gaia-pg0+ltdataset+automl", advanced=True)
 params = pc.bindParameters()
 
 # Do not change these unless you change the setup scripts too.
