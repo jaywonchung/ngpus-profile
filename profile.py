@@ -1,5 +1,5 @@
 """
-A cluster with N nodes attached to a LAN.
+A cluster with N nodes attached to a LAN. With a NFS server and dataset long-term persistancy.
 
 Hardware: c6420
 Image: UBUNTU18-64-STD
