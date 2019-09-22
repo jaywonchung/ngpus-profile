@@ -9,11 +9,11 @@ CLUSTERS = {
 }
 CLUSTER = 'clemson'
 HOSTS = (
-    220,
-    204,
-    201,
-    210,
-    183
+    216,
+    205,
+    188,
+    193,
+    213
 )
 
 # will be modified by host selector tasks
@@ -24,21 +24,21 @@ NODES = []
 def all(c):
     global NODES
     NODES += [1, 2, 3, 4, 5]
-    print('Running on all nodes: {NODES}')
+    print(f'Running on all nodes: {NODES}')
 
 
 @task
 def wk(c):
     global NODES
     NODES += [2, 3, 4, 5]
-    print('Running on worker nodes: {NODES}')
+    print(f'Running on worker nodes: {NODES}')
 
 
 @task
 def ms(c):
     global NODES
     NODES += [1]
-    print('Running on master nodes: {NODES}')
+    print(f'Running on master nodes: {NODES}')
 
 
 def hostname(node):

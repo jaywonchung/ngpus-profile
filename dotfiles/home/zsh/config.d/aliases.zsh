@@ -1,5 +1,5 @@
 # Alias
-alias ls='ls --color=auto -h -v --indicator-style=classify'
+alias ls='ls --ignore=lost+found --color=auto -h -v --indicator-style=classify'
 alias ll='ls -l'
 alias la='ls -a'
 alias lla='ls -al'
