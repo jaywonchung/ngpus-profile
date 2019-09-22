@@ -45,7 +45,7 @@ lan.link_multiplexing = True
 nfsServer = request.RawPC(nfsServerName)
 nfsServer.disk_image = params.osImage
 lan.addInterface(nfsServer.addInterface())
-nfsServer.addService(rspec.Execute(shell="sh", command="sudo /bin/bash /local/repository/nfs-server.sh"))
+nfsServer.addService(rspec.Execute(shell="bash", command="/local/repository/nfs-server.sh"))
 
 # Special node that represents the ISCSI device where the dataset resides
 dsnode = request.RemoteBlockstore("dsnode", nfsDirectory)
@@ -64,7 +64,7 @@ for i in range(params.num_nodes):
     node.disk_image = params.osImage
     node.hardware_type = "c6420"
     lan.addInterface(node.addInterface("if1"))
-    node.addService(rspec.Execute(shell="sh", command="sudo /bin/bash /local/repository/nfs-client.sh"))
+    node.addService(rspec.Execute(shell="bash", command="/local/repository/nfs-client.sh"))
     if len(params.setup) > 0:
         node.addService(rspec.Execute(shell="bash", command="/local/repository/{}".format(params.setup)))
 

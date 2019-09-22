@@ -16,6 +16,19 @@
 #
 . /etc/emulab/paths.sh
 
+#
+# Export the original username and group
+# and then escalate as root
+#
+export ORIG_USER=$USER
+export ORIG_GROUP=$(id -gn $USER)
+
+if [[ $EUID -ne 0 ]]; then
+    echo "Escalating to root with sudo"
+    exec sudo /bin/bash "$0" "$@"
+fi
+
+
 OS=$(uname -s)
 HOSTNAME=$(hostname -s)
 
@@ -65,7 +78,8 @@ done
 
 # Create the local mount directory.
 if [ ! -e $NFSDIR ]; then
-    mkdir -p -m 755 $NFSDIR
+    mkdir -p -m 2755 $NFSDIR
+    chown $ORIG_USER:$ORIG_GROUP $NFSDIR
 fi
 
 mntopts=

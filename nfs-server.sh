@@ -16,6 +16,19 @@
 #
 . /etc/emulab/paths.sh
 
+#
+# Export the original username and group
+# and then escalate as root
+#
+export ORIG_USER=$USER
+export ORIG_GROUP=$(id -gn $USER)
+
+if [[ $EUID -ne 0 ]]; then
+    echo "Escalating to root with sudo"
+    exec sudo /bin/bash "$0" "$@"
+fi
+
+
 OS=$(uname -s)
 HOSTNAME=$(hostname -s)
 
@@ -61,9 +74,9 @@ fi
 # If exports entry already exists, no need to do anything.
 #
 if ! grep -q "^$NFSDIR" /etc/exports; then
-    # Will be owned by root/wheel, you will have to use sudo on the clients
-    # to make sub directories and protect them accordingly.
-    mkdir -p -m 755 $NFSDIR
+    # Will be owned by geniuser/gaia-PG0
+    mkdir -p -m 2775 $NFSDIR
+    chown $ORIG_USER:$ORIG_GROUP $NFSDIR
 
     echo ""
     echo "Setting up NFS exports"
