@@ -125,6 +125,17 @@ def put(c, local, remote):
         c.put(local, remote)
 
 
+@task
+def run(c, cmd):
+    '''Run any command'''
+    if not NODES:
+        all(c)
+
+    for node in NODES:
+        c = connect(node)
+        c.run(cmd.format(c=c))
+
+
 r'''
 python $PROJ_DIR/examples/basics/multiworker.py --task_id $(hostname | rg -P -o 'node-\K\d') --num_worker 5
 '''

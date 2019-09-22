@@ -100,9 +100,9 @@ $TARGET_HOME/tools/miniconda3/bin/conda install --yes pip ipython jupyter jupyte
 $TARGET_HOME/tools/miniconda3/bin/conda install --yes pytorch torchvision cudatoolkit=10.0 -c pytorch
 
 # install project specific
-$TARGET_HOME/tools/miniconda3/bin/pip install -r /proj/gaia-PG0/peifeng/automl/Auto-PyTorch/requirements.txt
+$TARGET_HOME/tools/miniconda3/bin/pip install -r /nfs/Auto-PyTorch/requirements.txt
 $TARGET_HOME/tools/miniconda3/bin/pip install openml matplotlib
-$TARGET_HOME/tools/miniconda3/bin/pip install -e /proj/gaia-PG0/peifeng/automl/Auto-PyTorch/
+$TARGET_HOME/tools/miniconda3/bin/pip install -e /nfs/Auto-PyTorch/
 
 # fix permission
 echo "Fixing permission"
