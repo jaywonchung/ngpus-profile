@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # Setup a simple FreeBSD NFS server on /nfs
 #
