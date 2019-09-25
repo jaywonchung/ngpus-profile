@@ -107,3 +107,4 @@ $TARGET_HOME/tools/miniconda3/bin/pip install -e /nfs/Auto-PyTorch/
 # fix permission
 echo "Fixing permission"
 chown -R $TARGET_USER:$TARGET_GROUP $TARGET_HOME
+chown -R $TARGET_USER:$TARGET_GROUP /local/repository

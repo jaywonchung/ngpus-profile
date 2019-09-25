@@ -19,6 +19,9 @@ HOSTS = (
 # will be modified by host selector tasks
 NODES = []
 
+# Top level dir
+TOP_LEVEL = Path(__file__).parent
+
 
 @task
 def all(c):
@@ -99,7 +102,7 @@ def log(c):
     if not NODES:
         ms(c)
 
-    log_dir = Path(f'log/{datetime.now().isoformat()}')
+    log_dir = TOP_LEVEL / 'log' / datetime.now().isoformat()
     log_dir.mkdir(parents=True)
 
     for node in NODES:
