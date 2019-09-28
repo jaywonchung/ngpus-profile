@@ -78,8 +78,12 @@ if [[ $(hostname) == node-1* ]]; then
     echo "deb [ arch=amd64 ] https://repo.mongodb.org/apt/ubuntu bionic/mongodb-org/4.2 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-4.2.list
     sudo apt-get update
     sudo apt-get install -y mongodb-org
-    ip=$(ip a show dev vlan281 | rg -Po 'inet \K\d+\.\d+\.\d+\.\d+')
+
+    vlan=$(basename $(find /sys/class/net -iname 'vlan*'))
+    ip=$(ip a show dev $vlan | rg -Po 'inet \K\d+\.\d+\.\d+\.\d+')
+
     sed -E 's/(\s*bindIp:\s).*/\1'"$ip"'/g' /etc/mongod.conf
+
     sudo systemctl enable --now mongod
 fi
 
