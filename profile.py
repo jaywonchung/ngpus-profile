@@ -18,9 +18,11 @@ imageList = [
 
 pc = portal.Context()
 pc.defineParameter("num_nodes", "Number of nodes", portal.ParameterType.INTEGER, 5, [])
-pc.defineParameter("setup", "name of setup script",
+pc.defineParameter("user_name", "user name to run additional setup script",
+                   portal.ParameterType.STRING, "peifeng")
+pc.defineParameter("setup", "additional setup script",
                    portal.ParameterType.STRING, "setup.sh")
-pc.defineParameter("osImage", "Select OS image",
+pc.defineParameter("os_image", "Select OS image",
                    portal.ParameterType.IMAGE,
                    imageList[0], imageList, advanced=True)
 pc.defineParameter("dataset", "Dataset backing the NFS storage",
@@ -43,7 +45,7 @@ lan.link_multiplexing = True
 
 # nfs server with special block storage server
 nfsServer = request.RawPC(nfsServerName)
-nfsServer.disk_image = params.osImage
+nfsServer.disk_image = params.os_image
 lan.addInterface(nfsServer.addInterface())
 nfsServer.addService(rspec.Execute(shell="bash", command="/local/repository/nfs-server.sh"))
 
@@ -61,11 +63,12 @@ dslink.link_multiplexing = True
 # normal nodes
 for i in range(params.num_nodes):
     node = request.RawPC("node-{}".format(i + 1))
-    node.disk_image = params.osImage
+    node.disk_image = params.os_image
     node.hardware_type = "c6420"
     lan.addInterface(node.addInterface("if1"))
     node.addService(rspec.Execute(shell="bash", command="/local/repository/nfs-client.sh"))
     if len(params.setup) > 0:
-        node.addService(rspec.Execute(shell="bash", command="/local/repository/{}".format(params.setup)))
+        node.addService(rspec.Execute(shell="bash",
+                                      command="/local/repository/{} {}".format(params.setup, params.user_name)))
 
 pc.printRequestRSpec(request)
