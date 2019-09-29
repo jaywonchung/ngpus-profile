@@ -82,7 +82,7 @@ if [[ $(hostname) == node-1* ]]; then
     vlan=$(basename $(find /sys/class/net -iname 'vlan*'))
     ip=$(ip a show dev $vlan | rg -Po 'inet \K\d+\.\d+\.\d+\.\d+')
 
-    sed -E 's/(\s*bindIp:\s).*/\1'"$ip"'/g' /etc/mongod.conf
+    sed -i -E 's/(\s*bindIp:\s).*/\1'"$ip"'/g' /etc/mongod.conf
 
     sudo systemctl enable --now mongod
 fi
@@ -124,4 +124,8 @@ if [[ -d /nfs/Auto-Pytorch ]]; then
     $TARGET_HOME/tools/miniconda3/bin/pip install -r /nfs/Auto-PyTorch/requirements.txt
     $TARGET_HOME/tools/miniconda3/bin/pip install openml
     $TARGET_HOME/tools/miniconda3/bin/pip install -e /nfs/Auto-PyTorch/
+fi
+
+if [[ -d /nfs/cifar-automl ]]; then
+    $TARGET_HOME/tools/miniconda3/bin/pip install hyperopt
 fi

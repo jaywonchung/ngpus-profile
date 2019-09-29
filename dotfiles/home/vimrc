@@ -174,8 +174,9 @@ let g:seiya_target_groups = has('nvim') ? ['guibg'] : ['ctermbg']
 let g:seiya_auto_enable=1 " this is disabled in ginit.vim for neovim-qt, which doesn't have transparent bg
 
 " Settings for anyfold
-let g:anyfold_activate=1
+autocmd Filetype * AnyFoldActivate
 set foldlevel=1
+set foldminlines=3
 " unfolds the line in which the cursor is located when opening a file
 autocmd User anyfoldLoaded normal zv
 

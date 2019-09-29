@@ -9,11 +9,11 @@ CLUSTERS = {
 }
 CLUSTER = 'clemson'
 HOSTS = (
-    216,
-    205,
-    188,
-    193,
-    213
+    185,
+    202,
+    190,
+    211,
+    201
 )
 
 # will be modified by host selector tasks
@@ -87,6 +87,14 @@ def pull(c):
         ms(c)
 
     group(*NODES).run('cd $PROJ_DIR && git pull')
+
+
+@task
+def pip(c, pkg):
+    if not NODES:
+        all(c)
+
+    group(*NODES).run(f'pip install {pkg}')
 
 
 @task
