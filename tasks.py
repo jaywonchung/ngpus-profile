@@ -102,7 +102,7 @@ def rmlog(c):
     if not NODES:
         all(c)
 
-    group(*NODES).run('setopt null_glob; rm -f /nfs/log/multiworker-*.log')
+    group(*NODES).run('setopt null_glob; rm -f /nfs/log/*.log')
 
 
 @task
@@ -110,7 +110,8 @@ def log(c):
     if not NODES:
         ms(c)
 
-    log_dir = TOP_LEVEL / 'log' / datetime.now().isoformat()
+    log_dir = TOP_LEVEL / 'log' / datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
+
     log_dir.mkdir(parents=True)
 
     for node in NODES:
@@ -137,14 +138,17 @@ def put(c, local, remote):
 
 
 @task
-def run(c, cmd):
+def run(c, cmd, parallel=False):
     '''Run any command'''
     if not NODES:
         all(c)
 
-    for node in NODES:
-        c = connect(node)
-        c.run(cmd.format(c=c))
+    if not parallel:
+        for node in NODES:
+            c = connect(node)
+            c.run(cmd.format(c=c))
+    else:
+        group(*NODES).run(cmd)
 
 
 r'''

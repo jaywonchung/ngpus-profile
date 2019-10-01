@@ -12,10 +12,11 @@ df['Duration'] = df.EndTime - df.StartTime
 
 
 # %%
-def plot_hrange(event, begin, end):
+def plot_hrange(event, begin, end, ax=None, label=''):
     w = [abs(e-b) for b, e in zip(begin, end)]
-    fig, ax = plt.subplots()
-    ax.barh(event, width=w, left=begin, height=0.5)
+    if ax is None:
+        _, ax = plt.subplots()
+    ax.barh(event, width=w, left=begin, height=0.5, label=label)
     return ax
 
 
@@ -28,14 +29,25 @@ ax.set_ylabel('Worker')
 # %%
 def extract_job_logs(path):
     path = Path(path)
+    data = []
+    reg = re.compile(r'\[(?P<Timestamp>[^\]]+)\] \[.+\] (?P<Event>Starting|Finish) .+\((?P<Iter>\d+), (?P<Unknown>\d+), (?P<JobId>\d+)\) at .+$')
     for log in path.glob('multiworker-output-*.log'):
         node = log.stem.split('-')[2]
         with log.open() as f:
-            reg = re.compile(r'(Start|Finished) train')
             for line in f:
                 m = reg.match(line)
                 if not m:
                     continue
+                d = {
+                    'Node': int(node),
+                }
+                d.update(m.groupdict())
+                data.append(d)
+    df = pd.DataFrame(data)
+    df['Timestamp'] = pd.to_datetime(df.Timestamp)
+    for col in ['Iter', 'Unknown', 'JobId']:
+        df[col] = pd.to_numeric(df[col])
+    return df
 
 
 # %%
@@ -49,5 +61,43 @@ ax = plot_hrange(df.Worker, df.StartTime, df.EndTime)
 ax.set_xlabel('Time')
 ax.set_ylabel('Worker')
 
+
+#%%
+
+total = pd.DataFrame()
+for node in range(1, 6):
+    df = pd.read_csv(f'log/2019-09-30T10:04:29/node{node}.csv', sep='\t',
+                     names=['Iter', 'Unknown', 'JobId', 'StartTime', 'EndTime'])
+    df['Node'] = node
+    total = total.append(df)
+
+#%%
+
+total['StartTime'] = pd.to_datetime(total.StartTime)
+total['EndTime'] = pd.to_datetime(total.EndTime)
+fig, ax = plt.subplots(figsize=(12, 12))
+for it in range(9):
+    df = total[total.Iter == it]
+    df = df.reset_index(drop=True)
+    ax = plot_hrange(df.Node, df.StartTime, df.EndTime, ax=ax, label=str(it))
+ax.legend()
+
+#%%
+total = pd.DataFrame()
+for node in range(1, 5):
+    df = pd.read_csv(f'log/2019-09-30T10:04:29/hyper{node}.csv', sep='\t',
+                     names=['StartTime', 'EndTime', 'Node'])
+    total = total.append(df)
+total = total.reset_index(drop=True)
+total['Node'] = pd.to_numeric(total.Node)
+total['StartTime'] = pd.to_datetime(total.StartTime)
+total['EndTime'] = pd.to_datetime(total.EndTime)
+
+
+#%%
+
+fig, ax = plt.subplots(figsize=(12, 12))
+ax = plot_hrange(total.Node, total.StartTime, total.EndTime, ax=ax)
+ax.legend()
 
 #%%
