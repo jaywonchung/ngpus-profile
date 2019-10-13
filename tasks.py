@@ -2,19 +2,21 @@ from datetime import datetime
 from pathlib import Path
 
 from invoke import task
+from invoke.exceptions import Exit
 from fabric import Connection, ThreadingGroup as Group
 
 CLUSTERS = {
     'clemson': 'clnode{}'
 }
 CLUSTER = 'clemson'
-HOSTS = (
+HOSTS = [
     185,
     202,
     190,
     211,
-    201
-)
+    201,
+    194,
+]
 
 # will be modified by host selector tasks
 NODES = []
@@ -42,6 +44,23 @@ def ms(c):
     global NODES
     NODES += [1]
     print(f'Running on master nodes: {NODES}')
+
+
+@task
+def nd(c, n):
+    global NODES
+    NODES += [int(n)]
+    print(f'Running on nodes: {NODES}')
+
+
+@task
+def hs(c, hs):
+    global NODES
+    global HOSTS
+
+    HOSTS += [int(hs)]
+    NODES += [len(HOSTS)]
+    print(f'Running no hosts: clnode{HOSTS[-1]}')
 
 
 def hostname(node):
@@ -100,22 +119,84 @@ def pip(c, pkg):
 @task
 def rmlog(c):
     if not NODES:
-        all(c)
+        ms(c)
 
     group(*NODES).run('setopt null_glob; rm -f /nfs/log/*.log')
 
 
 @task
 def log(c):
+    try:
+        from coolname import generate_slug
+    except ImportError:
+        raise Exit("Python package `coolname` is needed to generate file name.")
+
     if not NODES:
         ms(c)
 
-    log_dir = TOP_LEVEL / 'log' / datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
+    log_dir = TOP_LEVEL / 'log' / generate_slug(2)
+    while log_dir.exists():
+        log_dir = TOP_LEVEL / 'log' / generate_slug(2)
 
     log_dir.mkdir(parents=True)
 
+    with (log_dir/'.timestamp').open('w') as f:
+        print(datetime.now().isoformat(), file=f)
+
     for node in NODES:
         c.run(f"rsync '{hostname(node)}:/nfs/log/*' {log_dir}/")
+
+    print(f"Log downloaded to {log_dir}")
+
+
+@task
+def preplog(c, slug):
+    '''Prepare log to csv'''
+    base_dir = TOP_LEVEL / 'log'
+    log_dir = base_dir / slug
+    if not log_dir.is_dir():
+        # try prefix match
+        for log_dir in base_dir.glob(f'{slug}*'):
+            if log_dir.is_dir():
+                break
+            raise Exit(f'Log dir {log_dir} does not exist')
+
+    # remove empty files
+    for log_file in log_dir.glob('*.log'):
+        if log_file.stat().st_size == 0:
+            print(f'Removing empty file {log_file}')
+            log_file.unlink()
+
+    # find if all different num_worker (as tag)
+    tags = []
+    for log_file in log_dir.glob('*.log'):
+        tag = '-'.join(log_file.stem.split('-')[:-2])
+        tags.append(tag)
+    tags = set(tags)
+
+    for tag in tags:
+        tgt_csv = log_dir / f'{tag}-jobs.csv'
+        if tgt_csv.exists():
+            print(f'Removing existing {tgt_csv}')
+            tgt_csv.unlink()
+
+        with tgt_csv.open('w') as f:
+            print('StartTime,EndTime,Iter,JobId,Budget,Epoches,Node', file=f)
+
+    for tag in tags:
+        # extract start/finish for different num_worker
+        tgt_csv = log_dir / f'{tag}-jobs.csv'
+        for log_file in log_dir.glob(f'{tag}-*.log'):
+            node = int(log_file.stem.split('-')[-1])
+            c.run(
+                f"rg '(Starting|Finish) optimization for' {log_file}"
+                " | "
+                f"rg --multiline --only-matching"
+                r" '\[([^\]]+)\].*Starting optimization for job \((\d+), \d+, (\d+)\) with budget (.+)\n"
+                r"\[([^\]]+)\].+Finish.+for (\d+) epoches.+\n'"
+                fr""" --replace '"$1","$5",$2,$3,$4,$6,{node}'"""
+                f" >> {tgt_csv}",
+            )
 
 
 @task

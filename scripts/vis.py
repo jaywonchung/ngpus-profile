@@ -28,9 +28,23 @@ def default_marker_end():
     ])
 
 
-def figure_legend(fig, **kwargs):
-    fig.legend(bbox_to_anchor=(0.5, 0.86), loc="lower center", **kwargs)
-    fig.subplots_adjust(top=0.86)
+def subplots(name, **kwargs):
+    figsize = kwargs.pop('figsize', None)
+    constrained_layout = kwargs.pop('constrained_layout', True)
+    
+    plt.close(name)
+    fig = plt.figure(name,
+                     figsize=figsize,
+                     constrained_layout=constrained_layout,
+                     clear=True)
+    axes = fig.subplots(**kwargs)
+
+    return fig, axes
+
+
+def legend(ax, **kwargs):
+    ax.legend(bbox_to_anchor=(0.5, 1), loc="lower center", **kwargs)
+    # fig.subplots_adjust(top=0.86)
 
 
 def job_timeline(workers, begin, end, groupby=None, label=None,
@@ -111,8 +125,9 @@ def job_timeline(workers, begin, end, groupby=None, label=None,
             xmax = end[mask]
             draw_group(y, xmin, xmax, key=grp_key)
     
-    # fix ticks to categorical
+    # fix yticks to categorical
     ax.yaxis.set_major_formatter(mticker.IndexFormatter(y_values))
+    ax.yaxis.set_major_locator(mticker.MultipleLocator(1.0))
     
     # set a default title
     ax.set_ylabel('Worker')
