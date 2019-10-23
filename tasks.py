@@ -1,5 +1,6 @@
 from datetime import datetime
 from pathlib import Path
+from collections import OrderedDict
 
 from invoke import task
 from invoke.exceptions import Exit
@@ -167,36 +168,62 @@ def preplog(c, slug):
             print(f'Removing empty file {log_file}')
             log_file.unlink()
 
-    # find if all different num_worker (as tag)
-    tags = []
+    tag_with_value = [
+        'num_worker',
+        'iter',
+        'output',
+        'name',
+    ]
+    known_tags = set()
     for log_file in log_dir.glob('*.log'):
-        tag = '-'.join(log_file.stem.split('-')[:-2])
-        tags.append(tag)
-    tags = set(tags)
+        # skip the first 'multiworker' word
+        words = log_file.stem.split('-')[1:]
+        # words must be an iterator for us to call next in for
+        words = iter(words)
+        # parse everything into a tag dict
+        tags = OrderedDict()
+        for word in words:
+            if word in tag_with_value:
+                try:
+                    nword = next(words)
+                except StopIteration:
+                    raise ValueError(f'Expecting value for {word}')
+                tags[word] = nword
+            else:
+                tags[word] = ''
 
-    for tag in tags:
-        tgt_csv = log_dir / f'{tag}-jobs.csv'
-        if tgt_csv.exists():
-            print(f'Removing existing {tgt_csv}')
-            tgt_csv.unlink()
+        # special meaning of 'output' tag, which is used as nodeId
+        try:
+            node = int(tags.pop('output'))
+        except KeyError:
+            raise ValueError(f'Unrecognized file name {log_file}, no `output` tag, known tags: {tags}')
+        except ValueError:
+            raise ValueError(f'Unrecognized file name {log_file}, invalid `output` value, known tags: {tags}')
 
-        with tgt_csv.open('w') as f:
-            print('StartTime,EndTime,Iter,JobId,Budget,Epoches,Node', file=f)
+        # use remaining tags to construct a csv name
+        tag_str = '-'.join(word for item in tags.items() for word in item).replace('--', '-').strip('-')
+        tgt_csv = log_dir / f'{tag_str}-jobs.csv'
+        if tag_str not in known_tags:
+            # print header and or remove existing
+            if tgt_csv.exists():
+                print(f'Removing existing {tgt_csv}')
+                tgt_csv.unlink()
 
-    for tag in tags:
-        # extract start/finish for different num_worker
-        tgt_csv = log_dir / f'{tag}-jobs.csv'
-        for log_file in log_dir.glob(f'{tag}-*.log'):
-            node = int(log_file.stem.split('-')[-1])
-            c.run(
-                f"rg '(Starting|Finish) optimization for' {log_file}"
-                " | "
-                f"rg --multiline --only-matching"
-                r" '\[([^\]]+)\].*Starting optimization for job \((\d+), \d+, (\d+)\) with budget (.+)\n"
-                r"\[([^\]]+)\].+Finish.+for (\d+) epoches.+\n'"
-                fr""" --replace '"$1","$5",$2,$3,$4,$6,{node}'"""
-                f" >> {tgt_csv}",
-            )
+            print(f'Generating {tgt_csv.name}')
+            with tgt_csv.open('w') as f:
+                print('StartTime,EndTime,Iter,JobId,Budget,Epoches,Node,Tag', file=f)
+        known_tags.add(tag_str)
+
+        # actually parse the log file
+        c.run(
+            f"rg '(Starting|Finish) optimization for' {log_file}"
+            " | "
+            f"rg --multiline --only-matching"
+            r" '\[([^\]]+)\].*Starting optimization for job \((\d+), \d+, (\d+)\) with budget (.+)\n"
+            r"\[([^\]]+)\].+Finish.+for (\d+) epoches.+\n'"
+            fr""" --replace '"$1","$5",$2,$3,$4,$6,{node},{tag_str}'"""
+            f" >> {tgt_csv}",
+        )
 
 
 @task
