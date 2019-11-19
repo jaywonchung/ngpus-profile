@@ -120,6 +120,10 @@ chown -R $TARGET_USER:$TARGET_GROUP $TARGET_HOME
 chown -R $TARGET_USER:$TARGET_GROUP /local/repository
 
 # install project specific
+if [[ -d /nfs/HpBandSter ]]; then
+    $TARGET_HOME/tools/miniconda3/bin/pip install -e /nfs/HpBandSter/
+fi
+
 if [[ -d /nfs/Auto-PyTorch ]]; then
     $TARGET_HOME/tools/miniconda3/bin/pip install -r /nfs/Auto-PyTorch/requirements.txt
     $TARGET_HOME/tools/miniconda3/bin/pip install openml
