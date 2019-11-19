@@ -125,8 +125,21 @@ def rmlog(c):
     group(*NODES).run('setopt null_glob; rm -f /nfs/log/*.log')
 
 
+def fuzzy_slug(slug):
+    '''Given a slug, find a log_dir'''
+    base_dir = TOP_LEVEL / 'log'
+    log_dir = base_dir / slug
+    if not log_dir.is_dir():
+        # try prefix match
+        for log_dir in base_dir.glob(f'{slug}*'):
+            if log_dir.is_dir():
+                print(f'Using existing log_dir: {log_dir.name}')
+                return log_dir
+    raise Exit(f'Log dir {log_dir} does not exist')
+
+
 @task
-def log(c):
+def log(c, slug=None):
     try:
         from coolname import generate_slug
     except ImportError:
@@ -135,14 +148,17 @@ def log(c):
     if not NODES:
         ms(c)
 
-    log_dir = TOP_LEVEL / 'log' / generate_slug(2)
-    while log_dir.exists():
+    if slug is None:
         log_dir = TOP_LEVEL / 'log' / generate_slug(2)
+        while log_dir.exists():
+            log_dir = TOP_LEVEL / 'log' / generate_slug(2)
 
-    log_dir.mkdir(parents=True)
+        log_dir.mkdir(parents=True)
 
-    with (log_dir/'.timestamp').open('w') as f:
-        print(datetime.now().isoformat(), file=f)
+        with (log_dir/'.timestamp').open('w') as f:
+            print(datetime.now().isoformat(), file=f)
+    else:
+        log_dir = fuzzy_slug(slug)
 
     for node in NODES:
         c.run(f"rsync '{hostname(node)}:/nfs/log/*' {log_dir}/")
@@ -153,14 +169,7 @@ def log(c):
 @task
 def preplog(c, slug):
     '''Prepare log to csv'''
-    base_dir = TOP_LEVEL / 'log'
-    log_dir = base_dir / slug
-    if not log_dir.is_dir():
-        # try prefix match
-        for log_dir in base_dir.glob(f'{slug}*'):
-            if log_dir.is_dir():
-                break
-            raise Exit(f'Log dir {log_dir} does not exist')
+    log_dir = fuzzy_slug(slug)
 
     # remove empty files
     for log_file in log_dir.glob('*.log'):
