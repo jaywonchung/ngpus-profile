@@ -128,7 +128,4 @@ fi
 
 if [[ -d /nfs/cifar-automl ]]; then
     $TARGET_HOME/tools/miniconda3/bin/pip install hyperopt
-    # patch to add no_subprocess option
-    cd $TARGET_HOME/tools/miniconda3/lib/python3.7/site-packages
-    curl -JL 'https://patch-diff.githubusercontent.com/raw/hyperopt/hyperopt/pull/484.patch' | patch -p1
 fi
