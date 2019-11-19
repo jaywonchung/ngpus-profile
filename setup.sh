@@ -114,11 +114,6 @@ rm Miniconda3-latest-Linux-x86_64.sh
 $TARGET_HOME/tools/miniconda3/bin/conda install --yes pip ipython jupyter jupyterlab matplotlib
 $TARGET_HOME/tools/miniconda3/bin/conda install --yes pytorch torchvision cudatoolkit=10.0 -c pytorch
 
-# fix permission
-echo "Fixing permission"
-chown -R $TARGET_USER:$TARGET_GROUP $TARGET_HOME
-chown -R $TARGET_USER:$TARGET_GROUP /local/repository
-
 # install project specific
 if [[ -d /nfs/HpBandSter ]]; then
     $TARGET_HOME/tools/miniconda3/bin/pip install -e /nfs/HpBandSter/
@@ -133,3 +128,8 @@ fi
 if [[ -d /nfs/cifar-automl ]]; then
     $TARGET_HOME/tools/miniconda3/bin/pip install hyperopt
 fi
+
+# fix permission
+echo "Fixing permission"
+chown -R $TARGET_USER:$TARGET_GROUP $TARGET_HOME
+chown -R $TARGET_USER:$TARGET_GROUP /local/repository
