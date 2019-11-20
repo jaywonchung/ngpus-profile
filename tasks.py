@@ -6,21 +6,10 @@ from invoke import task
 from invoke.exceptions import Exit
 from fabric import Connection, ThreadingGroup as Group
 
-CLUSTERS = {
-    'clemson': 'clnode{}'
-}
 CLUSTER = 'clemson'
-HOSTS = [
-    185,
-    202,
-    190,
-    211,
-    201,
-    194,
-]
 
 # will be modified by host selector tasks
-NODES = []
+TARGETS = []
 
 # Top level dir
 TOP_LEVEL = Path(__file__).parent
@@ -28,49 +17,56 @@ TOP_LEVEL = Path(__file__).parent
 
 @task
 def all(c):
-    global NODES
-    NODES += [1, 2, 3, 4, 5]
-    print(f'Running on all nodes: {NODES}')
+    global TARGETS
+    nodes = [1, 2, 3, 4, 5]
+    print(f'Running on all nodes: {nodes}')
+    TARGETS += [hostname(n) for n in nodes]
 
 
 @task
 def wk(c):
-    global NODES
-    NODES += [2, 3, 4, 5]
-    print(f'Running on worker nodes: {NODES}')
+    global TARGETS
+    nodes = [2, 3, 4, 5]
+    print(f'Running on worker nodes: {nodes}')
+    TARGETS += [hostname(n) for n in nodes]
 
 
 @task
 def ms(c):
-    global NODES
-    NODES += [1]
-    print(f'Running on master nodes: {NODES}')
+    global TARGETS
+    nodes = [1]
+    print(f'Running on master nodes: {nodes}')
+    TARGETS += [hostname(n) for n in nodes]
 
 
 @task
 def nd(c, n):
-    global NODES
-    NODES += [int(n)]
-    print(f'Running on nodes: {NODES}')
+    global TARGETS
+    nodes = [int(n)]
+    print(f'Running on nodes: {nodes}')
+    TARGETS += [hostname(n) for n in nodes]
 
 
 @task
 def hs(c, hs):
-    global NODES
-    global HOSTS
-
-    HOSTS += [int(hs)]
-    NODES += [len(HOSTS)]
-    print(f'Running no hosts: clnode{HOSTS[-1]}')
+    global TARGETS
+    hs = int(hs)
+    print(f'Running on hosts: clnode{hs}')
+    TARGETS += [f'clnode{hs}.{CLUSTER}.cloudlab.us']
 
 
 def hostname(node):
     '''Get full hostname for node, 1-based'''
-    return CLUSTERS[CLUSTER].format(HOSTS[node - 1])
+    try:
+        node = int(node)
+        return f'node-{node}.scaleml.gaia-pg0.{CLUSTER}.cloudlab.us'
+    except ValueError:
+        return node
 
 
 def group(*nodes):
     '''Get a group to nodes'''
+    # make sure every element is a hostname
     return Group(*[hostname(node) for node in nodes])
 
 
@@ -93,36 +89,36 @@ def _start_worker(c, task_id, num_worker):
 @task
 def worker(c):
     '''Workers runs on node-{2, 3, 4}'''
-    if not NODES:
+    if not TARGETS:
         wk(c)
 
-    for node in NODES:
-        conn = connect(node)
-        _start_worker(conn, node, 5)
+    for idx, host in enumerate(TARGETS):
+        conn = connect(host)
+        _start_worker(conn, idx, 5)
 
 
 @task
 def pull(c):
-    if not NODES:
+    if not TARGETS:
         ms(c)
 
-    group(*NODES).run('cd $PROJ_DIR && git pull')
+    group(*TARGETS).run('cd $PROJ_DIR && git pull')
 
 
 @task
 def pip(c, pkg):
-    if not NODES:
+    if not TARGETS:
         all(c)
 
-    group(*NODES).run(f'pip install {pkg}')
+    group(*TARGETS).run(f'pip install {pkg}')
 
 
 @task
 def rmlog(c):
-    if not NODES:
+    if not TARGETS:
         ms(c)
 
-    group(*NODES).run('setopt null_glob; rm -f /nfs/log/*.log')
+    group(*TARGETS).run('setopt null_glob; rm -f /nfs/log/*.log')
 
 
 def fuzzy_slug(slug):
@@ -145,7 +141,7 @@ def log(c, slug=None):
     except ImportError:
         raise Exit("Python package `coolname` is needed to generate file name.")
 
-    if not NODES:
+    if not TARGETS:
         ms(c)
 
     if slug is None:
@@ -160,8 +156,8 @@ def log(c, slug=None):
     else:
         log_dir = fuzzy_slug(slug)
 
-    for node in NODES:
-        c.run(f"rsync '{hostname(node)}:/nfs/log/*' {log_dir}/")
+    for host in TARGETS:
+        c.run(f"rsync '{host}:/nfs/log/*' {log_dir}/")
 
     print(f"Log downloaded to {log_dir}")
 
@@ -238,11 +234,11 @@ def preplog(c, slug):
 @task
 def put(c, local, remote):
     '''Upload local to remote path'''
-    if not NODES:
+    if not TARGETS:
         all(c)
 
-    for node in NODES:
-        c = connect(node)
+    for host in TARGETS:
+        c = connect(host)
         local = local.format(c=c)
         remote = remote.format(c=c)
         # make sure target dir exist
@@ -257,15 +253,15 @@ def put(c, local, remote):
 @task
 def run(c, cmd, parallel=False):
     '''Run any command'''
-    if not NODES:
+    if not TARGETS:
         all(c)
 
     if not parallel:
-        for node in NODES:
-            c = connect(node)
+        for host in TARGETS:
+            c = connect(host)
             c.run(cmd.format(c=c))
     else:
-        group(*NODES).run(cmd)
+        group(*TARGETS).run(cmd)
 
 
 r'''
