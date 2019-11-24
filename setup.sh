@@ -139,5 +139,6 @@ chown -R $TARGET_USER:$TARGET_GROUP /local/repository
 
 # initialize vim as if on first login
 su --login $TARGET_USER <<EOSU
+zsh --login -c "echo Initialized zsh"
 vim +PlugInstall! +qall
 EOSU
