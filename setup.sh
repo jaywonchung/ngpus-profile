@@ -111,7 +111,7 @@ echo "Setting up python"
 curl -JOL 'https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh'
 bash Miniconda3-latest-Linux-x86_64.sh -b -p $TARGET_HOME/tools/miniconda3
 rm Miniconda3-latest-Linux-x86_64.sh
-$TARGET_HOME/tools/miniconda3/bin/conda install --yes pip ipython jupyter jupyterlab matplotlib
+$TARGET_HOME/tools/miniconda3/bin/conda install --yes pip ipython jupyter jupyterlab matplotlib ipdb
 $TARGET_HOME/tools/miniconda3/bin/conda install --yes pytorch torchvision cudatoolkit=10.0 -c pytorch
 
 # install project specific
@@ -133,3 +133,8 @@ fi
 echo "Fixing permission"
 chown -R $TARGET_USER:$TARGET_GROUP $TARGET_HOME
 chown -R $TARGET_USER:$TARGET_GROUP /local/repository
+
+# initialize vim as if on first login
+su --login $TARGET_USER <<EOSU
+vim +PlugInstall! +qall
+EOSU
