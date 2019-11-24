@@ -111,6 +111,9 @@ echo "Setting up python"
 curl -JOL 'https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh'
 bash Miniconda3-latest-Linux-x86_64.sh -b -p $TARGET_HOME/tools/miniconda3
 rm Miniconda3-latest-Linux-x86_64.sh
+# make sure condarc is sourced even when not running as target user
+export CONDARC=$TARGET_HOME/.condarc
+
 $TARGET_HOME/tools/miniconda3/bin/conda install --yes pip ipython jupyter jupyterlab matplotlib ipdb
 $TARGET_HOME/tools/miniconda3/bin/conda install --yes pytorch torchvision cudatoolkit=10.0 -c pytorch
 
