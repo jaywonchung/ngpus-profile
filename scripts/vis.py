@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 from matplotlib.path import Path as mPath
@@ -60,18 +61,65 @@ def legend(ax, **kwargs):
     loc = kwargs.pop('loc', 'lower center')
     ax.legend(bbox_to_anchor=bbox_to_anchor, loc=loc, **kwargs)
     # fig.subplots_adjust(top=0.86)
+    
+
+def adjust_lightness(color, amount=0.5):
+    '''
+    the color gets brighter when amount > 1 and darker when amount < 1
+    '''
+    import matplotlib.colors as mc
+    import colorsys
+    try:
+        c = mc.cnames[color]
+    except:
+        c = color
+    c = colorsys.rgb_to_hls(*mc.to_rgb(c))
+    return colorsys.hls_to_rgb(c[0], max(0, min(1, amount * c[1])), c[2])
 
 
-def job_timeline(workers, begin, end, groupby=None, label=None,
-                 ax=None,
-                 marker_begin=None, marker_end=None,
-                 markersize=None,
-                 group_num=2, group_radius=.3):
+# http://stackoverflow.com/q/3844931/
+def check_equal(lst):
+    '''
+    Return True if all elements in the list are equal
+    '''
+    return not lst or [lst[0]]*len(lst) == lst
+
+
+def gen_groupby(*args, groups):
+    '''
+    group args by groups.
+    Each args should be list-like, groups should be a list of list-like.
+    Each of them should be of the same length
+    '''
+    if len(args) == 0 or len(groups) == 0:
+        raise ValueError('args or groups must be non-empty')
+    
+    groups = tuple(groups)
+    lens = [len(col) for col in args + groups]
+    if not check_equal(lens):
+        raise ValueError(f'args + groups of different length, got {lens}')
+    
+    # create a dataframe from group keys
+    groups = pd.concat(groups, axis=1)
+    keys = groups.drop_duplicates()
+    
+    for _, grp_key in keys.iterrows():
+        mask = (groups == grp_key).all(axis=1)
+        yield grp_key, [arg[mask] for arg in args]
+
+
+def job_timeline(workers, begin, end,
+             groupby=None, label=None,
+             ax=None,
+             marker_begin=None, marker_end=None,
+             markersize=None,
+             group_num=2, group_radius=.3):
     '''
         Args:
             workers: list
             begin: list
             end: list
+            inner_stage: list
             groupby: list
     '''
     if marker_begin is None:
@@ -88,9 +136,13 @@ def job_timeline(workers, begin, end, groupby=None, label=None,
             raise ValueError('Length of workers, begin, end should be equal,'
                              f' but got ({len(workers)}, {len(begin)}, {len(end)})')
     else:
-        if not len(workers) == len(begin) == len(end) == len(groupby):
-            raise ValueError('Length of workers, begin, end, groupby should be equal,'
-                             f' but got ({len(workers)}, {len(begin)}, {len(end)}, {len(groupby)})')
+        if not isinstance(groupby, list):
+            groupby = [groupby]
+        
+        lens = [len(col) for col in [workers, begin, end] + groupby]
+        if not check_equal(lens):
+            raise ValueError('Length of workers, begin, end, and col in groupby should be equal,'
+                             f' but got {lens}')
 
     # create y_pos according to workers, so workers doesn't has to be numeric
     y_values, y_pos = np.unique(workers, return_inverse=True)
@@ -112,9 +164,7 @@ def job_timeline(workers, begin, end, groupby=None, label=None,
     if ax is None:
         _, ax = plt.subplots()
 
-    def draw_group(y, xmin, xmax, key=None):
-        # cycle color
-        c = next(ax._get_lines.prop_cycler)['color']
+    def draw_group(y, xmin, xmax, c, key=None):
         # label
         if key is None:
             theLabel = label
@@ -132,13 +182,22 @@ def job_timeline(workers, begin, end, groupby=None, label=None,
 
     if groupby is None:
         draw_group(y_pos, begin, end)
+    if not isinstance(groupby, list):
+        groupby = [groupby]
+    
+    if len(groupby) >= 1 and len(groupby) <= 2:
+        # cycle color
+        c = next(ax._get_lines.prop_cycler)['color']
+        colors = {}
+        for grp_key, (y, xmin, xmax) in gen_groupby(y_pos, begin, end, groups=groupby):
+            if grp_key[0] not in colors:
+                colors[grp_key[0]] = next(ax._get_lines.prop_cycler)['color']
+            c = colors[grp_key[0]]
+            if len(grp_key) >= 2:
+                c = adjust_lightness(c, 1.5 - grp_key[1] * 0.3)
+            draw_group(y, xmin, xmax, c, key=grp_key)
     else:
-        for grp_key in np.unique(groupby):
-            mask = groupby == grp_key
-            y = y_pos[mask]
-            xmin = begin[mask]
-            xmax = end[mask]
-            draw_group(y, xmin, xmax, key=grp_key)
+        raise ValueError('Unsupported groupby')
 
     # fix yticks to categorical
     ax.yaxis.set_major_formatter(mticker.IndexFormatter(y_values))

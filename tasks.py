@@ -1,9 +1,10 @@
 from datetime import datetime
 from pathlib import Path
 from collections import OrderedDict
+import shutil
 
 from invoke import task
-from invoke.exceptions import Exit
+from invoke.exceptions import Exit, UnexpectedExit, Failure
 from fabric import Connection, ThreadingGroup as Group
 
 CLUSTER = 'clemson'
@@ -13,6 +14,14 @@ TARGETS = []
 
 # Top level dir
 TOP_LEVEL = Path(__file__).parent
+
+
+def sizeof_fmt(num, suffix='B'):
+    for unit in ['', 'Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei', 'Zi']:
+        if abs(num) < 1024.0:
+            return "%3.1f%s%s" % (num, unit, suffix)
+        num /= 1024.0
+    return "%.1f%s%s" % (num, 'Yi', suffix)
 
 
 @task
@@ -127,15 +136,18 @@ def fuzzy_slug(slug):
     log_dir = base_dir / slug
     if not log_dir.is_dir():
         # try prefix match
-        for log_dir in base_dir.glob(f'{slug}*'):
-            if log_dir.is_dir():
-                print(f'Using existing log_dir: {log_dir.name}')
-                return log_dir
+        candidates = [p for p in base_dir.glob(f'{slug}*') if p.is_dir()]
+        if len(candidates) == 1:
+            log_dir = candidates[0]
+            print(f'Using existing log_dir: {log_dir.name}')
+            return log_dir
+        elif len(candidates) > 1:
+            raise Exit(f'Multiple matches, use more specific name: {candidates}')
     raise Exit(f'Log dir {log_dir} does not exist')
 
 
 @task
-def log(c, slug=None):
+def log(c, slug=None, glob=None):
     try:
         from coolname import generate_slug
     except ImportError:
@@ -144,22 +156,31 @@ def log(c, slug=None):
     if not TARGETS:
         ms(c)
 
-    if slug is None:
-        log_dir = TOP_LEVEL / 'log' / generate_slug(2)
-        while log_dir.exists():
+    log_dir = None
+    try:
+        if slug is None:
             log_dir = TOP_LEVEL / 'log' / generate_slug(2)
+            while log_dir.exists():
+                log_dir = TOP_LEVEL / 'log' / generate_slug(2)
 
-        log_dir.mkdir(parents=True)
+            log_dir.mkdir(parents=True)
 
-        with (log_dir/'.timestamp').open('w') as f:
-            print(datetime.now().isoformat(), file=f)
-    else:
-        log_dir = fuzzy_slug(slug)
+            with (log_dir/'.timestamp').open('w') as f:
+                print(datetime.now().isoformat(), file=f)
+        else:
+            log_dir = fuzzy_slug(slug)
 
-    for host in TARGETS:
-        c.run(f"rsync '{host}:/nfs/log/*' {log_dir}/")
+        print(f"Downloading to {log_dir}")
 
-    print(f"Log downloaded to {log_dir}")
+        for host in TARGETS:
+            if glob is not None:
+                c.run(f"rsync -avzzP --info=progress2 '{host}:/nfs/log/*{glob}*' {log_dir}/")
+            else:
+                c.run(f"rsync -avzzP --info=progress2 '{host}:/nfs/log/*' {log_dir}/")
+    except Failure as e:
+        print(e)
+        if slug is None and log_dir is not None:
+            shutil.rmtree(log_dir)
 
 
 @task
@@ -173,6 +194,7 @@ def preplog(c, slug):
             print(f'Removing empty file {log_file}')
             log_file.unlink()
 
+    # parse legacy format
     tag_with_value = [
         'num_worker',
         'iter',
@@ -216,7 +238,7 @@ def preplog(c, slug):
 
             print(f'Generating {tgt_csv.name}')
             with tgt_csv.open('w') as f:
-                print('StartTime,EndTime,Iter,JobId,Budget,Epoches,Node,Tag', file=f)
+                print('StartTime,EndTime,Iter,Rung,JobId,Budget,Epoches,Node,Tag', file=f)
         known_tags.add(tag_str)
 
         # actually parse the log file
@@ -224,11 +246,55 @@ def preplog(c, slug):
             f"rg '(Starting|Finish) optimization for' {log_file}"
             " | "
             f"rg --multiline --only-matching"
-            r" '\[([^\]]+)\].*Starting optimization for job \((\d+), \d+, (\d+)\) with budget (.+)\n"
+            r" '\[([^\]]+)\].*Starting optimization for job \((\d+), (\d+), (\d+)\) with budget (.+)\n"
             r"\[([^\]]+)\].+Finish.+for (\d+) epoches.+\n'"
-            fr""" --replace '"$1","$5",$2,$3,$4,$6,{node},{tag_str}'"""
+            fr""" --replace '"$1","$6",$2,$3,$4,$5,$7,{node},{tag_str}'"""
             f" >> {tgt_csv}",
         )
+
+    # parse new event based
+    for log_file in log_dir.glob('*.log'):
+        tgt_jl = log_file.with_suffix('.jsonl')
+        try:
+            c.run(
+                f"rg --only-matching --pcre2 '(?<=SCHED: ).*$' {log_file}"
+                f" > {tgt_jl}"
+            )
+            print(f'Generating {tgt_jl.name}')
+        except UnexpectedExit:
+            tgt_jl.unlink()
+
+    compress(c, slug)
+
+
+@task
+def compress(c, slug):
+    """Compress log files under folder"""
+    import bz2
+    print("Now compressing logs")
+    orig_sz = 0
+    new_sz = 0
+    for log_file in fuzzy_slug(slug).glob('*.log'):
+        zstd_file = log_file.with_suffix(log_file.suffix + '.bz2')
+        with log_file.open('rb') as ifh, bz2.BZ2File(str(zstd_file), 'w') as ofh:
+            shutil.copyfileobj(ifh, ofh)
+        orig_sz += log_file.stat().st_size
+        new_sz += zstd_file.stat().st_size
+        log_file.unlink()
+    print(f'Reduced {sizeof_fmt(orig_sz - new_sz)} from {sizeof_fmt(orig_sz)} to {sizeof_fmt(new_sz)}')
+
+
+@task
+def extract(c, slug, delete=False):
+    """Extract all log files"""
+    import bz2
+    print("Now uncompressing logs")
+    for bz_file in fuzzy_slug(slug).glob('*.log.bz2'):
+        log_file = bz_file.with_suffix('')
+        with bz2.BZ2File(str(bz_file), 'rb') as ifh, log_file.open('wb') as ofh:
+            shutil.copyfileobj(ifh, ofh)
+        if delete:
+            bz_file.unlink()
 
 
 @task
