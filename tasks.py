@@ -7,6 +7,11 @@ from invoke import task
 from invoke.exceptions import Exit, UnexpectedExit, Failure
 from fabric import Connection, ThreadingGroup as Group
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from typing import Optional
+
+
 CLUSTER = 'clemson'
 
 # will be modified by host selector tasks
@@ -135,8 +140,7 @@ def fuzzy_slug(slug):
     base_dir = TOP_LEVEL / 'log'
     log_dir = base_dir / slug
     if not log_dir.is_dir():
-        # try prefix match
-        candidates = [p for p in base_dir.glob(f'{slug}*') if p.is_dir()]
+        candidates = [p for p in base_dir.glob(f'*{slug}*') if p.is_dir()]
         if len(candidates) == 1:
             log_dir = candidates[0]
             print(f'Using existing log_dir: {log_dir.name}')
@@ -156,12 +160,12 @@ def log(c, slug=None, glob=None):
     if not TARGETS:
         ms(c)
 
-    log_dir = None
+    log_dir: Optional[Path] = None
     try:
         if slug is None:
-            log_dir = TOP_LEVEL / 'log' / generate_slug(2)
+            log_dir = TOP_LEVEL / 'log' / f'{datetime.today().strftime("%Y%m%d")}-{generate_slug(2)}'
             while log_dir.exists():
-                log_dir = TOP_LEVEL / 'log' / generate_slug(2)
+                log_dir = TOP_LEVEL / 'log' / f'{datetime.today().strftime("%Y%m%d")}-{generate_slug(2)}'
 
             log_dir.mkdir(parents=True)
 
@@ -174,9 +178,9 @@ def log(c, slug=None, glob=None):
 
         for host in TARGETS:
             if glob is not None:
-                c.run(f"rsync -avzzP --info=progress2 '{host}:/nfs/log/*{glob}*' {log_dir}/")
+                c.run(f"rsync -avzzP --info=progress2 '{host}:/nfs/log/*{glob}*.log' {log_dir}/")
             else:
-                c.run(f"rsync -avzzP --info=progress2 '{host}:/nfs/log/*' {log_dir}/")
+                c.run(f"rsync -avzzP --info=progress2 '{host}:/nfs/log/*.log' {log_dir}/")
     except Failure as e:
         print(e)
         if slug is None and log_dir is not None:
