@@ -147,7 +147,8 @@ def fuzzy_slug(slug):
             return log_dir
         elif len(candidates) > 1:
             raise Exit(f'Multiple matches, use more specific name: {candidates}')
-    raise Exit(f'Log dir {log_dir} does not exist')
+        raise Exit(f'Log dir {log_dir} does not exist')
+    return log_dir
 
 
 @task
@@ -185,6 +186,10 @@ def log(c, slug=None, glob=None):
         print(e)
         if slug is None and log_dir is not None:
             shutil.rmtree(log_dir)
+
+    preplog(c, log_dir.name)
+
+    print(f"The log_dir is {log_dir.name}")
 
 
 @task
@@ -246,6 +251,7 @@ def preplog(c, slug):
         known_tags.add(tag_str)
 
         # actually parse the log file
+        print(f'    {log_file.name} -> {tgt_csv.name} [...]', end='')
         c.run(
             f"rg '(Starting|Finish) optimization for' {log_file}"
             " | "
@@ -255,6 +261,7 @@ def preplog(c, slug):
             fr""" --replace '"$1","$6",$2,$3,$4,$5,$7,{node},{tag_str}'"""
             f" >> {tgt_csv}",
         )
+        print(f'\b\b\b\b\b[Done]')
 
     # parse new event based
     for log_file in log_dir.glob('*.log'):

@@ -3,6 +3,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 from matplotlib.path import Path as mPath
+from pathlib import Path
+import re
+import json
+import copy
 
 
 def default_marker_begin():
@@ -27,6 +31,11 @@ def default_marker_end():
         (0.5, -0.866),
         (0, 0),
     ])
+
+
+# a namespace variable
+class NameSpace: pass
+d = NameSpace()
 
 
 def subplots(name, **kwargs):
@@ -108,6 +117,22 @@ def gen_groupby(*args, groups):
         yield grp_key, [arg[mask] for arg in args]
 
 
+def fuzzy_slug(slug):
+    '''Given a slug, find a log_dir'''
+    base_dir = Path('log')
+    log_dir = base_dir / slug
+    if not log_dir.is_dir():
+        # try substr match
+        candidates = [p for p in base_dir.glob(f'*{slug}*') if p.is_dir()]
+        if len(candidates) == 1:
+            log_dir = candidates[0]
+            print(f'Using existing log_dir: {log_dir.name}')
+            return log_dir
+        elif len(candidates) > 1:
+            raise ValueError(f'Multiple matches, use more specific name: {candidates}')
+    raise ValueError(f'Log dir {log_dir} does not exist')
+
+
 def job_timeline(workers, begin, end,
              groupby=None, label=None,
              ax=None,
@@ -181,23 +206,22 @@ def job_timeline(workers, begin, end,
                 linestyle='None', fillstyle='none')
 
     if groupby is None:
-        draw_group(y_pos, begin, end)
-    if not isinstance(groupby, list):
-        groupby = [groupby]
-    
-    if len(groupby) >= 1 and len(groupby) <= 2:
-        # cycle color
         c = next(ax._get_lines.prop_cycler)['color']
-        colors = {}
-        for grp_key, (y, xmin, xmax) in gen_groupby(y_pos, begin, end, groups=groupby):
-            if grp_key[0] not in colors:
-                colors[grp_key[0]] = next(ax._get_lines.prop_cycler)['color']
-            c = colors[grp_key[0]]
-            if len(grp_key) >= 2:
-                c = adjust_lightness(c, 1.5 - grp_key[1] * 0.3)
-            draw_group(y, xmin, xmax, c, key=grp_key)
+        draw_group(y_pos, begin, end, c)
     else:
-        raise ValueError('Unsupported groupby')
+        if len(groupby) >= 1 and len(groupby) <= 2:
+            # cycle color
+            c = next(ax._get_lines.prop_cycler)['color']
+            colors = {}
+            for grp_key, (y, xmin, xmax) in gen_groupby(y_pos, begin, end, groups=groupby):
+                if grp_key[0] not in colors:
+                    colors[grp_key[0]] = next(ax._get_lines.prop_cycler)['color']
+                c = colors[grp_key[0]]
+                if len(grp_key) >= 2:
+                    c = adjust_lightness(c, 1.5 - grp_key[1] * 0.3)
+                draw_group(y, xmin, xmax, c, key=grp_key)
+        else:
+            raise ValueError('Unsupported groupby')
 
     # fix yticks to categorical
     ax.yaxis.set_major_formatter(mticker.IndexFormatter(y_values))
@@ -208,3 +232,136 @@ def job_timeline(workers, begin, end,
     ax.set_xlabel('Time')
 
     return ax
+
+
+def idfy(name):
+    '''Given a name, return a encoded str sutiable as ID'''
+    name = name.replace('-', '_')
+    if name[0].isdigit():
+        name = '_' + name
+    return name
+
+
+def save_global(slug, name, df):
+    slug = idfy(slug)
+    name = idfy(name)
+    try:
+        ns = getattr(d, slug)
+    except AttributeError:
+        ns = NameSpace()
+        setattr(d, slug, ns)
+    setattr(ns, name, df)
+
+
+def load_jobs(slug, tag=''):
+    # find log dir
+    log_dir = fuzzy_slug(slug)
+    
+    # find file
+    if tag:
+        tag = tag + '-'
+    csv_file = log_dir / f'{tag}jobs.csv'
+    if not csv_file.is_file():
+        # try glob
+        for csv_file in log_dir.glob(f'*{tag}jobs.csv'):
+            if csv_file.is_file():
+                break
+            raise ValueError(f'CSV file {csv_file} does not exist')
+        else:
+            raise ValueError(f'CSV file {csv_file} does not exist')
+    
+    # load it
+    assert csv_file.is_file()
+    print(f'Loading {csv_file}')
+    total = pd.read_csv(str(csv_file))
+    for col in ['StartTime', 'EndTime']:
+        total[col] = pd.to_datetime(total[col])
+    for col in ['Budget', 'Iter', 'Rung', 'JobId', 'Epoches', 'Node']:
+        total[col] = pd.to_numeric(total[col])
+    total['Duration'] = (total.EndTime - total.StartTime).astype('timedelta64[s]')
+    total = total.sort_values(by=['Iter', 'Rung', 'JobId'])
+    
+    # save it under a global name
+    save_global(slug, csv_file.stem[csv_file.stem.find('name-') + 5:-5], total)
+    return total
+
+
+def load_jobs_v2(slug, tag):
+    # find log dir
+    log_dir = fuzzy_slug(slug)
+    
+    # find file
+    jl_file = log_dir / f'{tag}.jsonl'
+    if not jl_file.is_file():
+        # try glob
+        for jl_file in log_dir.glob(f'*{tag}*.jsonl'):
+            if jl_file.is_file():
+                break
+            raise ValueError(f'JSONL file {jl_file} does not exist')
+            
+    # load it
+    print(f'Loading {jl_file}')
+    ptn_node = re.compile(r'node-(?P<node>\d+)')
+    with jl_file.open() as f:
+        data = []
+        for line in f:
+            job = json.loads(line)['job']
+            j = {}
+            j['Iter'], j['Rung'], j['JobId'] = job['id']
+            j['SubmitTime'] = job['timestamps']['submitted']
+            j['StartTime'] = job['timestamps']['started']
+            j['EndTime'] = job['timestamps']['finished']
+            j['Budget'] = job['kwargs']['budget']
+            j['Epoches'] = job['result']['epoch']
+            j['NumWorker'] = len(job['worker_name'])
+            j['SkippedCount'] = job['skipped_count']
+            j['OptNum'] = job['opt_num']
+            j['Raw'] = job
+            
+            if 'estimator_info' in job:
+                if 'est_run' in job['estimator_info']:
+                    j['EstRun'] = job['estimator_info']['est_run']
+                else:
+                    j['EstRun'] = 0
+            
+            # compatibility with old plotting code
+            for node in job['worker_name']:
+                j = copy.deepcopy(j)
+                j['Node'] = int(ptn_node.search(node).group('node'))
+                data.append(j)
+                
+    total = pd.DataFrame(data)
+        
+    for col in ['StartTime', 'EndTime', 'SubmitTime']:
+        total[col] = pd.to_datetime(total[col], unit='s')
+    for col in ['Budget', 'Iter', 'Rung', 'JobId', 'Epoches', 'Node', 'NumWorker', 'SkippedCount', 'OptNum', 'EstRun']:
+        if col in total:
+            total[col] = pd.to_numeric(total[col])
+    total['Duration'] = (total.EndTime - total.StartTime).astype('timedelta64[s]')
+    total = total.sort_values(by=['Iter', 'Rung', 'JobId']).reset_index(drop=True)
+    
+    # save it under a global name
+    save_global(slug, jl_file.stem[jl_file.stem.find('name-') + 5:], total)
+    return total
+
+
+def timelines(slug, names, title='', **kwargs):
+    _, axs = subplots(f'Auto-PyTorch with {slug} {title}', sharex=True, nrows=len(names), **kwargs)
+    
+    # get the full slug
+    _, slug = fuzzy_slug(slug).name.split('-', 1)
+    
+    # get df
+    dfs = [
+        (name, getattr(getattr(d, idfy(slug)), idfy(name)))
+        for name in names
+    ]
+    # find a ref point
+    ref = min(df.StartTime.min() for _, df in dfs)
+    
+    for ax, (name, df) in zip(axs.flatten(), dfs):
+        diff = df.StartTime.min() - ref
+        job_timeline(df.Node, df.StartTime - diff, df.EndTime - diff, groupby=[df.Iter, df.Rung],
+                     label='Iter {key[0]} Rung {key[1]}', ax=ax)
+        legend(ax, ncol=5, bbox_to_anchor=(0.5, 1.18))
+        ax.set_title(name)
