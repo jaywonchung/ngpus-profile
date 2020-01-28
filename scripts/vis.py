@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -7,6 +9,11 @@ from pathlib import Path
 import re
 import json
 import copy
+
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from typing import Sequence, List
 
 
 def default_marker_begin():
@@ -34,7 +41,10 @@ def default_marker_end():
 
 
 # a namespace variable
-class NameSpace: pass
+class NameSpace:
+    pass
+
+
 d = NameSpace()
 
 
@@ -70,7 +80,7 @@ def legend(ax, **kwargs):
     loc = kwargs.pop('loc', 'lower center')
     ax.legend(bbox_to_anchor=bbox_to_anchor, loc=loc, **kwargs)
     # fig.subplots_adjust(top=0.86)
-    
+
 
 def adjust_lightness(color, amount=0.5):
     '''
@@ -80,7 +90,7 @@ def adjust_lightness(color, amount=0.5):
     import colorsys
     try:
         c = mc.cnames[color]
-    except:
+    except KeyError:
         c = color
     c = colorsys.rgb_to_hls(*mc.to_rgb(c))
     return colorsys.hls_to_rgb(c[0], max(0, min(1, amount * c[1])), c[2])
@@ -94,7 +104,7 @@ def check_equal(lst):
     return not lst or [lst[0]]*len(lst) == lst
 
 
-def gen_groupby(*args, groups):
+def gen_groupby(*args: pd.Series, groups: List[pd.Series]):
     '''
     group args by groups.
     Each args should be list-like, groups should be a list of list-like.
@@ -102,16 +112,16 @@ def gen_groupby(*args, groups):
     '''
     if len(args) == 0 or len(groups) == 0:
         raise ValueError('args or groups must be non-empty')
-    
+
     groups = tuple(groups)
     lens = [len(col) for col in args + groups]
     if not check_equal(lens):
         raise ValueError(f'args + groups of different length, got {lens}')
-    
+
     # create a dataframe from group keys
-    groups = pd.concat(groups, axis=1)
+    groups: pd.DataFrame = pd.concat(groups, axis=1)
     keys = groups.drop_duplicates()
-    
+
     for _, grp_key in keys.iterrows():
         mask = (groups == grp_key).all(axis=1)
         yield grp_key, [arg[mask] for arg in args]
@@ -163,7 +173,7 @@ def job_timeline(workers, begin, end,
     else:
         if not isinstance(groupby, list):
             groupby = [groupby]
-        
+
         lens = [len(col) for col in [workers, begin, end] + groupby]
         if not check_equal(lens):
             raise ValueError('Length of workers, begin, end, and col in groupby should be equal,'
@@ -256,7 +266,7 @@ def save_global(slug, name, df):
 def load_jobs(slug, tag=''):
     # find log dir
     log_dir = fuzzy_slug(slug)
-    
+
     # find file
     if tag:
         tag = tag + '-'
@@ -269,7 +279,7 @@ def load_jobs(slug, tag=''):
             raise ValueError(f'CSV file {csv_file} does not exist')
         else:
             raise ValueError(f'CSV file {csv_file} does not exist')
-    
+
     # load it
     assert csv_file.is_file()
     print(f'Loading {csv_file}')
@@ -280,7 +290,7 @@ def load_jobs(slug, tag=''):
         total[col] = pd.to_numeric(total[col])
     total['Duration'] = (total.EndTime - total.StartTime).astype('timedelta64[s]')
     total = total.sort_values(by=['Iter', 'Rung', 'JobId'])
-    
+
     # save it under a global name
     save_global(slug, csv_file.stem[csv_file.stem.find('name-') + 5:-5], total)
     return total
@@ -289,7 +299,7 @@ def load_jobs(slug, tag=''):
 def load_jobs_v2(slug, tag):
     # find log dir
     log_dir = fuzzy_slug(slug)
-    
+
     # find file
     jl_file = log_dir / f'{tag}.jsonl'
     if not jl_file.is_file():
@@ -298,7 +308,7 @@ def load_jobs_v2(slug, tag):
             if jl_file.is_file():
                 break
             raise ValueError(f'JSONL file {jl_file} does not exist')
-            
+
     # load it
     print(f'Loading {jl_file}')
     ptn_node = re.compile(r'node-(?P<node>\d+)')
@@ -317,21 +327,21 @@ def load_jobs_v2(slug, tag):
             j['SkippedCount'] = job['skipped_count']
             j['OptNum'] = job['opt_num']
             j['Raw'] = job
-            
+
             if 'estimator_info' in job:
                 if 'est_run' in job['estimator_info']:
                     j['EstRun'] = job['estimator_info']['est_run']
                 else:
                     j['EstRun'] = 0
-            
+
             # compatibility with old plotting code
             for node in job['worker_name']:
                 j = copy.deepcopy(j)
                 j['Node'] = int(ptn_node.search(node).group('node'))
                 data.append(j)
-                
+
     total = pd.DataFrame(data)
-        
+
     for col in ['StartTime', 'EndTime', 'SubmitTime']:
         total[col] = pd.to_datetime(total[col], unit='s')
     for col in ['Budget', 'Iter', 'Rung', 'JobId', 'Epoches', 'Node', 'NumWorker', 'SkippedCount', 'OptNum', 'EstRun']:
@@ -339,18 +349,18 @@ def load_jobs_v2(slug, tag):
             total[col] = pd.to_numeric(total[col])
     total['Duration'] = (total.EndTime - total.StartTime).astype('timedelta64[s]')
     total = total.sort_values(by=['Iter', 'Rung', 'JobId']).reset_index(drop=True)
-    
+
     # save it under a global name
     save_global(slug, jl_file.stem[jl_file.stem.find('name-') + 5:], total)
     return total
 
 
 def timelines(slug, names, title='', **kwargs):
-    _, axs = subplots(f'Auto-PyTorch with {slug} {title}', sharex=True, nrows=len(names), **kwargs)
-    
+    fig, axs = subplots(f'Auto-PyTorch with {slug} {title}', squeeze=False, sharex=True, nrows=len(names), **kwargs)
+
     # get the full slug
     _, slug = fuzzy_slug(slug).name.split('-', 1)
-    
+
     # get df
     dfs = [
         (name, getattr(getattr(d, idfy(slug)), idfy(name)))
@@ -358,10 +368,12 @@ def timelines(slug, names, title='', **kwargs):
     ]
     # find a ref point
     ref = min(df.StartTime.min() for _, df in dfs)
-    
+
     for ax, (name, df) in zip(axs.flatten(), dfs):
         diff = df.StartTime.min() - ref
         job_timeline(df.Node, df.StartTime - diff, df.EndTime - diff, groupby=[df.Iter, df.Rung],
                      label='Iter {key[0]} Rung {key[1]}', ax=ax)
         legend(ax, ncol=5, bbox_to_anchor=(0.5, 1.18))
         ax.set_title(name)
+
+    return fig, axs

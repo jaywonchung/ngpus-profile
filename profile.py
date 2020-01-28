@@ -46,6 +46,7 @@ lan.link_multiplexing = True
 # nfs server with special block storage server
 nfsServer = request.RawPC(nfsServerName)
 nfsServer.disk_image = params.os_image
+nfsServer.hardware_type = "c8220"
 lan.addInterface(nfsServer.addInterface())
 nfsServer.addService(rspec.Execute(shell="bash", command="/local/repository/nfs-server.sh"))
 
