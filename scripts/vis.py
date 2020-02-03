@@ -143,6 +143,16 @@ def fuzzy_slug(slug):
     raise ValueError(f'Log dir {log_dir} does not exist')
 
 
+def normalize_time(cols, ref=None):
+    if not cols:
+        return cols
+    if ref is None:
+        ref = cols[0].min()
+    return [
+        (col - ref).astype('timedelta64[s]')
+        for col in cols
+    ]
+
 def job_timeline(workers, begin, end,
              groupby=None, label=None,
              ax=None,
@@ -377,3 +387,31 @@ def timelines(slug, names, title='', **kwargs):
         ax.set_title(name)
 
     return fig, axs
+
+
+def loss_over_time(start, end, raw, **kwargs):
+    _, time = normalize_time([start, end])
+    
+    loss = raw.apply(lambda obj: obj['result']['loss'])
+    df = pd.DataFrame({'Time': time, 'Loss': loss}).sort_values('Time')
+    df['MinLoss'] = df.Loss.cummin()
+    
+    kwargs['drawstyle'] = 'steps-pre'
+    ax = df.plot(x='Time', y='MinLoss', **kwargs)
+    ax.set_ylim([0, 1])
+    ax.set_xlim([0, ax.get_xlim()[1]])
+    return ax
+
+def losses(slug, names, title='', **kwargs):
+    fig, ax = subplots(f'Loss over time for {slug} {title}', **kwargs)
+    
+    _, slug = fuzzy_slug(slug).name.split('-', 1)
+    
+    dfs = [
+        (name, getattr(getattr(d, idfy(slug)), idfy(name)))
+        for name in names
+    ]
+    
+    for name, df in dfs:
+        loss_over_time(df.StartTime, df.EndTime, df.Raw, ax=ax, label=name)
+    return fig, ax
