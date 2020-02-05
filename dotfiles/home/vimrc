@@ -90,6 +90,25 @@ Plug 'arecarn/vim-fold-cycle'
 " Indent text object
 Plug 'michaeljsmith/vim-indent-object'
 
+" Undo history visualizer
+Plug 'mbbill/undotree'
+
+" NERD Tree with git status
+Plug 'scrooloose/nerdtree'
+Plug 'Xuyuanp/nerdtree-git-plugin'
+
+" Surroound
+Plug 'tpope/vim-surround'
+
+" NERD Commenter
+Plug 'scrooloose/nerdcommenter'
+
+" Auto close braces
+Plug 'spf13/vim-autoclose'
+
+" Word jumping with vim-snipe
+Plug 'yangmillstheory/vim-snipe'
+
 if !has('nvim')
     " Bracketed pasting mode: http://cirw.in/blog/bracketed-paste
     " natively supported in neovim

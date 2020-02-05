@@ -116,7 +116,8 @@ def pull(c):
     if not TARGETS:
         ms(c)
 
-    group(*TARGETS).run('cd $PROJ_DIR && git pull')
+    group(*TARGETS).run('cd /nfs/Auto-PyTorch && git pull')
+    group(*TARGETS).run('cd /nfs/HpBandSter && git pull')
 
 
 @task

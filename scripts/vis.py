@@ -365,7 +365,7 @@ def load_jobs_v2(slug, tag):
     return total
 
 
-def timelines(slug, names, title='', **kwargs):
+def timelines(slug, names, title='', relative=False, **kwargs):
     fig, axs = subplots(f'Auto-PyTorch with {slug} {title}', squeeze=False, sharex=True, nrows=len(names), **kwargs)
 
     # get the full slug
@@ -380,8 +380,12 @@ def timelines(slug, names, title='', **kwargs):
     ref = min(df.StartTime.min() for _, df in dfs)
 
     for ax, (name, df) in zip(axs.flatten(), dfs):
-        diff = df.StartTime.min() - ref
-        job_timeline(df.Node, df.StartTime - diff, df.EndTime - diff, groupby=[df.Iter, df.Rung],
+        if relative:
+            start, end = normalize_time([df.StartTime, df.EndTime])
+        else:
+            diff = df.StartTime.min() - ref
+            start, end = df.StartTime - diff, df.EndTime - diff
+        job_timeline(df.Node, start, end, groupby=[df.Iter, df.Rung],
                      label='Iter {key[0]} Rung {key[1]}', ax=ax)
         legend(ax, ncol=5, bbox_to_anchor=(0.5, 1.18))
         ax.set_title(name)

@@ -64,7 +64,7 @@ function term_title_precmd() {
 	emulate -L zsh
 	local cmd='zsh'
 	local dir='%~'
-	term_set_title $HOST:$cmd:${(%)dir}
+	term_set_title ${HOST//.*}:$cmd:${(%)dir}
 }
 
 function term_title_preexec() {
@@ -72,7 +72,7 @@ function term_title_preexec() {
 	term_title_get_command $1
 	local cmd=$RETURN_COMMAND
 	local dir='%~'
-	term_set_title $HOST:$cmd:${(%)dir}
+	term_set_title ${HOST//.*}:$cmd:${(%)dir}
 }
 
 autoload -Uz add-zsh-hook

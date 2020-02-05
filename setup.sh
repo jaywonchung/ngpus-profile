@@ -71,6 +71,26 @@ curl -s https://api.github.com/repos/sharkdp/fd/releases/latest |
     xargs -n 1 curl -JL -o install.deb &&
     dpkg -i install.deb &&
     rm install.deb
+# pueued
+curl -s https://api.github.com/repos/Nukesor/pueue/releases/latest |
+    grep -oP "browser_download_url.*\Khttp.*pueue-linux-amd64" |
+    xargs -n 1 curl -JL -o pueue &&
+    install -D pueue $TARGET_HOME/.local/bin/pueue &&
+    rm pueue
+curl -s https://api.github.com/repos/Nukesor/pueue/releases/latest |
+    grep -oP "browser_download_url.*\Khttp.*pueued-linux-amd64" |
+    xargs -n 1 curl -JL -o pueued &&
+    install -D pueued $TARGET_HOME/.local/bin/pueued &&
+    rm pueued
+curl -s https://api.github.com/repos/Nukesor/pueue/releases/latest |
+    grep -oP "tarball_url.*\Khttp.*tarball/v[^\"]*" |
+    xargs -n 1 curl -JL |
+    tar xzf - --strip-components=2 --wildcards '*/utils/pueued.service' &&
+    sed -iE "s#/usr/bin#%h/.local/bin#g" pueued.service &&
+    install -D pueued.service $TARGET_HOME/.config/systemd/user/pueued.service &&
+    rm pueued.service &&
+    systemctl --user daemon-reload &&
+    systemctl --user enable --now pueued
 
 # mongodb on node-1
 if [[ $(hostname) == node-1* ]]; then
