@@ -11,7 +11,7 @@ function cdmk() {
 }
 function htop() {
     local htoprc=$HOME/.config/htop/htoprc.low
-    if [[ $(tput lines) -gt 24 ]]; then
+    if [[ $(tput lines) -gt 50 ]]; then
         htoprc=$HOME/.config/htop/htoprc.high
     fi
     env TERM=screen HTOPRC=$htoprc htop "$@"
