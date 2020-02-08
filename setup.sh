@@ -1,5 +1,5 @@
 #! /bin/bash
-set -e
+set -ex
 
 TARGET_USER=${1:-geniuser}
 TARGET_GROUP=$(id -gn $TARGET_USER)
