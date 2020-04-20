@@ -91,6 +91,13 @@ curl -s https://api.github.com/repos/Nukesor/pueue/releases/latest |
     rm pueued.service &&
     systemctl --user daemon-reload &&
     systemctl --user enable --now pueued
+# procs
+curl -s https://api.github.com/repos/dalance/procs/releases/latest |
+    grep -oP "browser_download_url.*\Khttp.*x86_64-lnx.zip" |
+    xargs -n 1 curl -JL -o install.zip &&
+    unzip -d $TARGET_HOME/.local/bin install.zip &&
+    rm install.zip
+
 
 # mongodb on node-1
 if [[ $(hostname) == node-1* ]]; then
