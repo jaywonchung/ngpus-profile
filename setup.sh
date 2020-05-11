@@ -48,6 +48,9 @@ if [[ -f /local/repository/.setup-done ]]; then
 fi
 date > /local/repository/.setup-done
 
+# mount /tmp as tmpfs
+mount -t tmpfs tmpfs /tmp
+
 # base software
 sudo apt-get update
 sudo apt-get install -y zsh fonts-powerline git tmux neovim python3-neovim build-essential cmake gawk htop bmon
