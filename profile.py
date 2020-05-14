@@ -25,6 +25,8 @@ pc.defineParameter("setup", "additional setup script",
 pc.defineParameter("os_image", "Select OS image",
                    portal.ParameterType.IMAGE,
                    imageList[0], imageList, advanced=True)
+pc.defineParameter("nfs_hw", "NFS hardware to use", "c8220", advanced=True)
+pc.defineParameter("node_hw", "Node hardware to use", "c6420", advanced=True)
 pc.defineParameter("dataset", "Dataset backing the NFS storage",
                    portal.ParameterType.STRING,
                    "urn:publicid:IDN+clemson.cloudlab.us:gaia-pg0+ltdataset+automl", advanced=True)
@@ -46,7 +48,7 @@ lan.link_multiplexing = True
 # nfs server with special block storage server
 nfsServer = request.RawPC(nfsServerName)
 nfsServer.disk_image = params.os_image
-nfsServer.hardware_type = "c8220"
+nfsServer.hardware_type = params.nfs_hw
 lan.addInterface(nfsServer.addInterface())
 nfsServer.addService(rspec.Execute(shell="bash", command="/local/repository/nfs-server.sh"))
 
@@ -65,7 +67,7 @@ dslink.link_multiplexing = True
 for i in range(params.num_nodes):
     node = request.RawPC("node-{}".format(i + 1))
     node.disk_image = params.os_image
-    node.hardware_type = "c6420"
+    node.hardware_type = params.node_hw
     lan.addInterface(node.addInterface("if1"))
     node.addService(rspec.Execute(shell="bash", command="/local/repository/nfs-client.sh"))
     if len(params.setup) > 0:
