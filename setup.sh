@@ -112,7 +112,7 @@ for exe in vi vim editor; do
 done
 
 echo "Setting default umask"
-sed -iE 's/^(UMASK\s+)[0-9]+$/\1002/g' /etc/login.defs
+sed -i -E 's/^(UMASK\s+)[0-9]+$/\1002/g' /etc/login.defs
 
 # update repo
 echo "Updating profile repo"
