@@ -25,8 +25,8 @@ pc.defineParameter("setup", "additional setup script",
 pc.defineParameter("os_image", "Select OS image",
                    portal.ParameterType.IMAGE,
                    imageList[0], imageList, advanced=True)
-pc.defineParameter("nfs_hw", "NFS hardware to use", "c8220", advanced=True)
-pc.defineParameter("node_hw", "Node hardware to use", "c6420", advanced=True)
+pc.defineParameter("nfs_hw", "NFS hardware to use", portal.ParameterType.NODETYPE, "c8220", advanced=True)
+pc.defineParameter("node_hw", "Node hardware to use", portal.ParameterType.NODETYPE, "c6420", advanced=True)
 pc.defineParameter("dataset", "Dataset backing the NFS storage",
                    portal.ParameterType.STRING,
                    "urn:publicid:IDN+clemson.cloudlab.us:gaia-pg0+ltdataset+automl", advanced=True)
@@ -71,7 +71,11 @@ for i in range(params.num_nodes):
     lan.addInterface(node.addInterface("if1"))
     node.addService(rspec.Execute(shell="bash", command="/local/repository/nfs-client.sh"))
     if len(params.setup) > 0:
-        node.addService(rspec.Execute(shell="bash",
-                                      command="/local/repository/{} {}".format(params.setup, params.user_name)))
+        node.addService(
+            rspec.Execute(
+                shell="bash",
+                command="/local/repository/{} {}".format(params.setup, params.user_name)
+            )
+        )
 
 pc.printRequestRSpec(request)

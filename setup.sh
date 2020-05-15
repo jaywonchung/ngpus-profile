@@ -1,14 +1,12 @@
 #! /bin/bash
 set -ex
 
-TARGET_USER=${1:-geniuser}
-TARGET_GROUP=$(id -gn $TARGET_USER)
-TARGET_HOME=$(eval echo "~$TARGET_USER")
+PROJ_GROUP=gaia-PG0
+
 CONFIG_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 make_dir() {
     mkdir -p $1
-    sudo chown $TARGET_USER:$TARGET_GROUP $1
     sudo chmod 755 $1
 }
 
@@ -34,7 +32,7 @@ link_files() {
 }
 
 # whoami
-echo "Running as $(whoami) with groups ($(groups)), targeting user $TARGET_USER:$TARGET_GROUP"
+echo "Running as $(whoami) with groups ($(groups))"
 
 # i am root now
 if [[ $EUID -ne 0 ]]; then
@@ -56,13 +54,6 @@ sudo apt-get update
 sudo apt-get install -y zsh fonts-powerline git tmux neovim python3-neovim build-essential cmake gawk htop bmon
 sudo apt-get autoremove -y
 
-echo "Setting default shell to zsh"
-sudo usermod -s /usr/bin/zsh $TARGET_USER
-echo "Setting default editor to neovim"
-for exe in vi vim editor; do
-    sudo update-alternatives --install /usr/bin/$exe $exe /usr/bin/nvim 60
-done
-
 # additional software
 curl -s https://api.github.com/repos/BurntSushi/ripgrep/releases/latest |
     grep -oP "browser_download_url.*\Khttp.*amd64.deb" |
@@ -78,29 +69,27 @@ curl -s https://api.github.com/repos/sharkdp/fd/releases/latest |
 curl -s https://api.github.com/repos/Nukesor/pueue/releases/latest |
     grep -oP "browser_download_url.*\Khttp.*pueue-linux-amd64" |
     xargs -n 1 curl -JL -o pueue &&
-    install -D pueue $TARGET_HOME/.local/bin/pueue &&
+    install -D pueue /usr/local/bin/pueue &&
     rm pueue
 curl -s https://api.github.com/repos/Nukesor/pueue/releases/latest |
     grep -oP "browser_download_url.*\Khttp.*pueued-linux-amd64" |
     xargs -n 1 curl -JL -o pueued &&
-    install -D pueued $TARGET_HOME/.local/bin/pueued &&
+    install -D pueued /usr/local/bin/pueued &&
     rm pueued
 curl -s https://api.github.com/repos/Nukesor/pueue/releases/latest |
     grep -oP "tarball_url.*\Khttp.*tarball/v[^\"]*" |
     xargs -n 1 curl -JL |
     tar xzf - --strip-components=2 --wildcards '*/utils/pueued.service' &&
     sed -iE "s#/usr/bin#%h/.local/bin#g" pueued.service &&
-    install -D pueued.service $TARGET_HOME/.config/systemd/user/pueued.service &&
+    install -Dm644 pueued.service /etc/systemd/user/pueued.service &&
     rm pueued.service &&
-    systemctl --user daemon-reload &&
-    systemctl --user enable --now pueued
+    systemctl --user --global enable pueued
 # procs
 curl -s https://api.github.com/repos/dalance/procs/releases/latest |
     grep -oP "browser_download_url.*\Khttp.*x86_64-lnx.zip" |
     xargs -n 1 curl -JL -o install.zip &&
-    unzip -d $TARGET_HOME/.local/bin install.zip &&
+    unzip -d /usr/local/bin install.zip &&
     rm install.zip
-
 
 # mongodb on node-1
 if [[ $(hostname) == node-1* ]]; then
@@ -117,58 +106,95 @@ if [[ $(hostname) == node-1* ]]; then
     sudo systemctl enable --now mongod
 fi
 
+echo "Setting default editor to neovim"
+for exe in vi vim editor; do
+    sudo update-alternatives --install /usr/bin/$exe $exe /usr/bin/nvim 60
+done
+
+echo "Setting default umask"
+sed -iE 's/^(UMASK\s+)[0-9]+$/\1002/g' /etc/login.defs
+
 # update repo
 echo "Updating profile repo"
 if [[ -d /local/repository ]]; then
     cd /local/repository
     git checkout master
     git pull
+    chgrp -R $PROJ_GROUP /local/repository
+    chmod -R g+w /local/repository
 fi
-
-# dotfiles
-echo "Linking dotfiles"
-make_dir $TARGET_HOME/.local
-link_files $CONFIG_DIR/dotfiles/home $TARGET_HOME "."
-ln -sf $CONFIG_DIR/dotfiles/scripts $TARGET_HOME/.local/bin
-
-# common directories
-make_dir $TARGET_HOME/tools
-make_dir $TARGET_HOME/downloads
-make_dir $TARGET_HOME/buildbed
 
 # python
 echo "Setting up python"
+CONDA_PREFIX=/opt/miniconda3
 curl -JOL 'https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh'
-bash Miniconda3-latest-Linux-x86_64.sh -b -p $TARGET_HOME/tools/miniconda3
+bash Miniconda3-latest-Linux-x86_64.sh -b -p $CONDA_PREFIX
 rm Miniconda3-latest-Linux-x86_64.sh
-# make sure condarc is sourced even when not running as target user
-export CONDARC=$TARGET_HOME/.condarc
-
-$TARGET_HOME/tools/miniconda3/bin/conda install --yes pip ipython jupyter jupyterlab matplotlib ipdb
-$TARGET_HOME/tools/miniconda3/bin/conda install --yes pytorch torchvision cudatoolkit=10.0 -c pytorch
+echo <<CONDARC
+channel_priority: strict
+channels:
+  - pytorch
+  - conda-forge
+  - defaults
+CONDARC
+> $CONDA_PREFIX/condarc
+ln -s $CONDA_PREFIX/etc/profile.d/conda.sh /etc/profile.d
+$CONDA_PREFIX/bin/conda install --yes pip ipython jupyter jupyterlab matplotlib ipdb cython
+$CONDA_PREFIX/bin/conda install --yes pytorch torchvision cudatoolkit=10.0 -c pytorch
+# make sure everyone can install
+chgrp -R $PROJ_GROUP /opt/miniconda3
+chmod -R g+w /opt/miniconda3
 
 # install project specific
 if [[ -d /nfs/HpBandSter ]]; then
-    $TARGET_HOME/tools/miniconda3/bin/pip install -e /nfs/HpBandSter/
+    $CONDA_PREFIX/bin/pip install -e /nfs/HpBandSter/
 fi
 
 if [[ -d /nfs/Auto-PyTorch ]]; then
-    $TARGET_HOME/tools/miniconda3/bin/pip install -r /nfs/Auto-PyTorch/requirements.txt
-    $TARGET_HOME/tools/miniconda3/bin/pip install openml
-    $TARGET_HOME/tools/miniconda3/bin/pip install -e /nfs/Auto-PyTorch/
+    $CONDA_PREFIX/bin/pip install -r /nfs/Auto-PyTorch/requirements.txt
+    $CONDA_PREFIX/bin/pip install openml
+    $CONDA_PREFIX/bin/pip install -e /nfs/Auto-PyTorch/
 fi
 
 if [[ -d /nfs/cifar-automl ]]; then
-    $TARGET_HOME/tools/miniconda3/bin/pip install hyperopt
+    $CONDA_PREFIX/bin/pip install hyperopt
 fi
 
-# fix permission
-echo "Fixing permission"
-chown -R $TARGET_USER:$TARGET_GROUP $TARGET_HOME
-chown -R $TARGET_USER:$TARGET_GROUP /local/repository
 
-# initialize vim as if on first login
-su --login $TARGET_USER <<EOSU
+# per user configs
+config_user() {
+    local TARGET_USER=$1
+    local TARGET_GROUP=$(id -gn $TARGET_USER)
+    local TARGET_HOME=$(eval echo "~$TARGET_USER")
+
+    echo "Configuring $TARGET_USER"
+
+    echo "Setting default shell to zsh"
+    sudo usermod -s /usr/bin/zsh $TARGET_USER
+
+    # dotfiles
+    echo "Linking dotfiles"
+    make_dir $TARGET_HOME/.local
+    link_files $CONFIG_DIR/dotfiles/home $TARGET_HOME "."
+    ln -sf $CONFIG_DIR/dotfiles/scripts $TARGET_HOME/.local/bin
+
+    # common directories
+    make_dir $TARGET_HOME/tools
+    make_dir $TARGET_HOME/downloads
+    make_dir $TARGET_HOME/buildbed
+
+    # fix permission
+    echo "Fixing permission"
+    chown -R $TARGET_USER:$TARGET_GROUP $TARGET_HOME
+
+    # initialize vim as if on first login
+    su --login $TARGET_USER <<EOSU
 zsh --login -c "echo Initialized zsh"
 vim +PlugInstall! +qall
 EOSU
+
+}
+
+config_user peifeng
+config_user JIACHEN
+
