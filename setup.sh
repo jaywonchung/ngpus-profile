@@ -137,6 +137,14 @@ channels:
   - defaults
 CONDARC
 > $CONDA_PREFIX/condarc
+echo <<EOF
+if [ -f "/opt/miniconda3/etc/profile.d/conda.sh" ]; then
+    . "/opt/miniconda3/etc/profile.d/conda.sh"
+else
+    export PATH="/opt/miniconda3/bin:$PATH"
+fi
+EOF
+>> /etc/zsh/zprofile
 ln -sf $CONDA_PREFIX/etc/profile.d/conda.sh /etc/profile.d
 $CONDA_PREFIX/bin/conda install --yes pip ipython jupyter jupyterlab matplotlib cython
 $CONDA_PREFIX/bin/conda install --yes pytorch torchvision cudatoolkit=10.0 -c pytorch
