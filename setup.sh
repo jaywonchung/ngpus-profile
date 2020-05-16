@@ -188,8 +188,8 @@ config_user() {
 
     # initialize vim as if on first login
     su --login $TARGET_USER <<EOSU
-zsh --login -c "source $HOME/.zshrc && echo Initialized zsh"
-vim +PlugInstall! +qall
+zsh --login -c "umask 022 && source \$HOME/.zshrc && echo Initialized zsh"
+vim +PlugInstall! +qall > /dev/null
 EOSU
 
 }
