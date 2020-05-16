@@ -129,22 +129,26 @@ CONDA_PREFIX=/opt/miniconda3
 curl -JOL 'https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh'
 bash Miniconda3-latest-Linux-x86_64.sh -b -p $CONDA_PREFIX
 rm Miniconda3-latest-Linux-x86_64.sh
-echo <<CONDARC
+cat <<CONDARC > $CONDA_PREFIX/condarc
+auto_activate_base: true
 channel_priority: strict
 channels:
   - pytorch
   - conda-forge
   - defaults
 CONDARC
-> $CONDA_PREFIX/condarc
-echo <<EOF
-if [ -f "/opt/miniconda3/etc/profile.d/conda.sh" ]; then
-    . "/opt/miniconda3/etc/profile.d/conda.sh"
+cat <<EOF >> /etc/zsh/zshenv
+_conda_setup="\$('/opt/miniconda3/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
+if [ \$? -eq 0 ]; then
+    eval "\$__conda_setup"
 else
-    export PATH="/opt/miniconda3/bin:$PATH"
+    if [ -f "/opt/miniconda3/etc/profile.d/conda.sh" ]; then
+        . "/opt/miniconda3/etc/profile.d/conda.sh"
+    else
+        export PATH="/opt/miniconda3/bin:\$PATH"
+    fi
 fi
 EOF
->> /etc/zsh/zprofile
 ln -sf $CONDA_PREFIX/etc/profile.d/conda.sh /etc/profile.d
 $CONDA_PREFIX/bin/conda install --yes pip ipython jupyter jupyterlab matplotlib cython
 $CONDA_PREFIX/bin/conda install --yes pytorch torchvision cudatoolkit=10.0 -c pytorch
