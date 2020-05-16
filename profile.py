@@ -66,6 +66,8 @@ for i in range(params.num_nodes):
     node = request.RawPC("node-{}".format(i + 1))
     node.disk_image = params.os_image
     node.hardware_type = params.node_hw
+    bs = node.Blockstore("bs", "/opt")
+    bs.size = "100GB"
     lan.addInterface(node.addInterface("if1"))
     node.addService(rspec.Execute(shell="bash", command="/local/repository/nfs-client.sh"))
     if len(params.setup) > 0:
