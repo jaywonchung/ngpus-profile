@@ -48,6 +48,9 @@ fi
 # mount /tmp as tmpfs
 mount -t tmpfs tmpfs /tmp
 
+# remove unused PPAs
+find /etc/apt/sources.list.d/ -type f -print -delete
+
 # base software
 sudo apt-get update
 sudo apt-get install -y zsh fonts-powerline git tmux neovim python3-neovim build-essential cmake gawk htop bmon
