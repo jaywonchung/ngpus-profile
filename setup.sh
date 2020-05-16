@@ -154,7 +154,7 @@ fi
 EOF
 ln -sf $CONDA_PREFIX/etc/profile.d/conda.sh /etc/profile.d
 $CONDA_PREFIX/bin/conda install --yes pip ipython jupyter jupyterlab matplotlib cython
-$CONDA_PREFIX/bin/conda install --yes pytorch torchvision cudatoolkit=10.0 -c pytorch
+$CONDA_PREFIX/bin/conda install --yes pytorch torchvision cudatoolkit=10.2 -c pytorch
 # make sure everyone can install
 chgrp -R $PROJ_GROUP /opt/miniconda3
 chmod -R g+w /opt/miniconda3

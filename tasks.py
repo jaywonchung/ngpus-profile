@@ -121,6 +121,14 @@ def pull(c):
 
 
 @task
+def conda(c, pkg):
+    if not TARGETS:
+        all(c)
+
+    group(*TARGETS).run(f'conda install {pkg}')
+
+
+@task
 def pip(c, pkg):
     if not TARGETS:
         all(c)
@@ -264,9 +272,9 @@ def preplog(c, slug):
                 fr""" --replace '"$1","$6",$2,$3,$4,$5,$7,{node},{tag_str}'"""
                 f" >> {tgt_csv}",
             )
-            print(f'\b\b\b\b\b[Done]')
+            print('\b\b\b\b\b[Done]')
         except UnexpectedExit:
-            print(f'\b\b\b\b\b[Empty]')
+            print('\b\b\b\b\b[Empty]')
 
     # parse new event based
     for log_file in log_dir.glob('*.log'):
