@@ -11,9 +11,7 @@ import geni.rspec.pg as rspec
 # Only Ubuntu images supported.
 imageList = [
     ('urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU18-64-STD', 'UBUNTU 18.04'),
-    ('urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU16-64-STD', 'UBUNTU 16.04'),
-    ('urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU14-64-STD', 'UBUNTU 14.04'),
-    ('urn:publicid:IDN+emulab.net+image+emulab-ops//CENTOS7-64-STD', 'CENTOS 7'),
+    ('urn:publicid:IDN+wisc.cloudlab.us+image+gaia-PG0:gpu-u1804.node-1', 'UBUNTU 18.04 CUDA 10'),
 ]
 
 pc = portal.Context()
