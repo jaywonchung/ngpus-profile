@@ -44,7 +44,6 @@ fi
 if [[ -f /local/repository/.setup-done ]]; then
     exit
 fi
-date > /local/repository/.setup-done
 
 # mount /tmp as tmpfs
 mount -t tmpfs tmpfs /tmp
@@ -138,8 +137,8 @@ channels:
   - defaults
 CONDARC
 > $CONDA_PREFIX/condarc
-ln -s $CONDA_PREFIX/etc/profile.d/conda.sh /etc/profile.d
-$CONDA_PREFIX/bin/conda install --yes pip ipython jupyter jupyterlab matplotlib ipdb cython
+ln -sf $CONDA_PREFIX/etc/profile.d/conda.sh /etc/profile.d
+$CONDA_PREFIX/bin/conda install --yes pip ipython jupyter jupyterlab matplotlib cython
 $CONDA_PREFIX/bin/conda install --yes pytorch torchvision cudatoolkit=10.0 -c pytorch
 # make sure everyone can install
 chgrp -R $PROJ_GROUP /opt/miniconda3
@@ -189,7 +188,7 @@ config_user() {
 
     # initialize vim as if on first login
     su --login $TARGET_USER <<EOSU
-zsh --login -c "echo Initialized zsh"
+zsh --login -c "source $HOME/.zshrc && echo Initialized zsh"
 vim +PlugInstall! +qall
 EOSU
 
@@ -198,3 +197,4 @@ EOSU
 config_user peifeng
 config_user JIACHEN
 
+date > /local/repository/.setup-done
