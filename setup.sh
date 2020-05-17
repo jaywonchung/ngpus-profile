@@ -141,7 +141,7 @@ channels:
   - defaults
 CONDARC
 cat <<EOF >> /etc/zsh/zshenv
-_conda_setup="\$('/opt/miniconda3/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
+__conda_setup="\$('/opt/miniconda3/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
 if [ \$? -eq 0 ]; then
     eval "\$__conda_setup"
 else
@@ -154,7 +154,7 @@ fi
 EOF
 ln -sf $CONDA_PREFIX/etc/profile.d/conda.sh /etc/profile.d
 $CONDA_PREFIX/bin/conda install --yes pip ipython jupyter jupyterlab matplotlib cython
-$CONDA_PREFIX/bin/conda install --yes pytorch torchvision cudatoolkit=10.2 -c pytorch
+$CONDA_PREFIX/bin/conda install --yes pytorch=1.5.0 torchvision cudatoolkit=10.2 -c pytorch
 # make sure everyone can install
 chgrp -R $PROJ_GROUP /opt/miniconda3
 chmod -R g+w /opt/miniconda3
