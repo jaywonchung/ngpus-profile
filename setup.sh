@@ -82,7 +82,7 @@ curl -s https://api.github.com/repos/Nukesor/pueue/releases/latest |
     grep -oP "tarball_url.*\Khttp.*tarball/v[^\"]*" |
     xargs -n 1 curl -JL |
     tar xzf - --strip-components=2 --wildcards '*/utils/pueued.service' &&
-    sed -iE "s#/usr/bin#%h/.local/bin#g" pueued.service &&
+    sed -i "s#/usr/bin#/usr/local/bin#g" pueued.service &&
     install -Dm644 pueued.service /etc/systemd/user/pueued.service &&
     rm pueued.service &&
     systemctl --user --global enable pueued
