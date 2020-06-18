@@ -25,7 +25,7 @@ link_files() {
             link_files "$dot" "$tgt"
         else
             echo "Link $dot -> $tgt"
-            ln -sf $(realpath $dot) "$tgt"
+            ln -sfn $(realpath $dot) "$tgt"
         fi
     done
 }
