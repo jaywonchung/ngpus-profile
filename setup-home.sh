@@ -69,6 +69,8 @@ EOSU
     date > $TARGET_HOME/.setup-done
 }
 
+sudo git -C $SELF_DIR pull
+
 for user in "$@"
 do
     config_user "$user"
