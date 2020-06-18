@@ -58,10 +58,10 @@ config_user() {
 
     # fix permission
     echo "Fixing permission"
-    chown -R $TARGET_USER:$TARGET_GROUP $TARGET_HOME
+    sudo chown -R $TARGET_USER:$TARGET_GROUP $TARGET_HOME
 
     # initialize vim as if on first login
-    su --login $TARGET_USER <<EOSU
+    sudo su --login $TARGET_USER <<EOSU
 zsh --login -c "umask 022 && source \$HOME/.zshrc && echo Initialized zsh"
 vim +PlugInstall! +qall > /dev/null
 EOSU
