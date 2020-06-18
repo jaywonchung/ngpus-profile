@@ -56,6 +56,11 @@ config_user() {
     make_dir $TARGET_HOME/downloads
     make_dir $TARGET_HOME/buildbed
 
+    # fix mounting point
+    if [[ -d $TARGET_HOME/my_mounting_point ]]; then
+        sudo umount $TARGET_HOME/my_mounting_point
+    fi
+
     # fix permission
     echo "Fixing permission"
     sudo chown -R $TARGET_USER:$TARGET_GROUP $TARGET_HOME
