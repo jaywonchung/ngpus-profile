@@ -25,9 +25,9 @@ pc.defineParameter("os_image", "Select OS image",
                    imageList[0], imageList, advanced=True)
 pc.defineParameter("nfs_hw", "NFS hardware to use", portal.ParameterType.NODETYPE, "c8220", advanced=True)
 pc.defineParameter("node_hw", "Node hardware to use", portal.ParameterType.NODETYPE, "c6420", advanced=True)
-pc.defineParameter("dataset", "Dataset backing the NFS storage, leave empty to use an ephermal 200G blockstorage on nfs server",
+pc.defineParameter("dataset", "Dataset URN backing the NFS storage, leave empty to use an ephermal 200G blockstorage on nfs server",
                    portal.ParameterType.STRING,
-                   "urn:publicid:IDN+clemson.cloudlab.us:gaia-pg0+ltdataset+automl", advanced=True)
+                   "", advanced=True)
 params = pc.bindParameters()
 
 # Do not change these unless you change the setup scripts too.
