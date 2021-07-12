@@ -71,7 +71,7 @@ for i in range(params.num_nodes):
     node.disk_image = params.os_image
     node.hardware_type = params.node_hw
     bs = node.Blockstore("bs-{}".format(i + 1), "/data")
-    bs.size = "100GB"
+    bs.size = "200GB"
     lan.addInterface(node.addInterface("if1"))
     node.addService(rspec.Execute(shell="bash", command="/local/repository/nfs-client.sh"))
     if len(params.setup) > 0:

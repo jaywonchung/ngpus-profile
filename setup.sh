@@ -21,6 +21,13 @@ fi
 # mount /tmp as tmpfs
 mount -t tmpfs tmpfs /tmp
 
+# mount /opt from /data
+mount --bind /data/opt /opt
+
+# fix /data permission
+chgrp -R $PROJ_GROUP /data
+chmod -R g+w /data
+
 # remove unused PPAs
 find /etc/apt/sources.list.d/ -type f -print -delete
 
