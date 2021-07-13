@@ -22,7 +22,7 @@ fi
 mount -t tmpfs tmpfs /tmp
 
 # mount /opt from /data
-mount --bind /data/opt /opt
+mkdir -p /data/opt && mount --bind /data/opt /opt
 
 # fix /data permission
 chgrp -R $PROJ_GROUP /data

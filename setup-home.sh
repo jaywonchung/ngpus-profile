@@ -42,6 +42,9 @@ config_user() {
 
     echo "Configuring $TARGET_USER"
 
+    echo "Redirect cache to /data"
+    mkdir -p /data/cache/$TARGET_USER && sudo mount --bind /data/cache/$TARGET_USER $TARGET_HOME/.cache
+
     echo "Setting default shell to zsh"
     sudo usermod -s /usr/bin/zsh $TARGET_USER
 
