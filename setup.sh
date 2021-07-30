@@ -47,6 +47,10 @@ mkdir -p /data/opt && mount --bind /data/opt /opt
 chgrp -R $PROJ_GROUP /data
 chmod -R g+w /data
 
+# fix /nfs permission
+chgrp -R $PROJ_GROUP /nfs
+chmod -R g+w /nfs
+
 # remove unused PPAs
 find /etc/apt/sources.list.d/ -type f -print -delete
 
