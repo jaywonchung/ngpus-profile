@@ -13,6 +13,25 @@ if [[ $EUID -ne 0 ]]; then
     exec sudo /bin/bash "$0" "$@"
 fi
 
+# update repo
+echo "Updating profile repo"
+if [[ -d /local/repository ]]; then
+    cd /local/repository
+    chgrp -R $PROJ_GROUP /local/repository
+    chmod -R g+w /local/repository
+    git checkout master
+
+    changed=0
+    git remote update && git status -uno | grep -q 'Profile repo branch is behind' && changed=1
+    if [ $changed = 1 ]; then
+        git pull
+        echo "Updated successfully, reexec setup.sh"
+        exec /local/repository/setup.sh
+    else
+        echo "Up-to-date"
+    fi
+fi
+
 # am i done
 if [[ -f /local/repository/.setup-done ]]; then
     exit
@@ -81,16 +100,6 @@ done
 echo "Setting default umask"
 sed -i -E 's/^(UMASK\s+)[0-9]+$/\1002/g' /etc/login.defs
 
-# update repo
-echo "Updating profile repo"
-if [[ -d /local/repository ]]; then
-    cd /local/repository
-    git checkout master
-    git pull
-    chgrp -R $PROJ_GROUP /local/repository
-    chmod -R g+w /local/repository
-fi
-
 # python
 echo "Setting up python"
 CONDA_PREFIX=/opt/miniconda3
@@ -107,7 +116,7 @@ channels:
   - defaults
 CONDARC
 
-if !grep 'conda_setup' /etc/zsh/zshenv; then
+if ! grep 'conda_setup' /etc/zsh/zshenv; then
 
     cat <<EOF >> /etc/zsh/zshenv
 __conda_setup="\$('/opt/miniconda3/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
