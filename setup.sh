@@ -21,9 +21,9 @@ if [[ -d /local/repository ]]; then
     chmod -R g+w /local/repository
     git checkout master
 
-    changed=0
-    git remote update && git status -uno | grep -q 'Profile repo branch is behind' && changed=1
-    if [ $changed = 1 ]; then
+    changed=false
+    git remote update && git status -uno | grep -q 'Profile repo branch is behind' && changed=true
+    if $changed; then
         git pull
         echo "Updated successfully, reexec setup.sh"
         exec /local/repository/setup.sh
@@ -45,11 +45,11 @@ mkdir -p /data/opt && mount --bind /data/opt /opt
 
 # fix /data permission
 chgrp -R $PROJ_GROUP /data
-chmod -R g+w /data
+chmod -R g+sw /data
 
 # fix /nfs permission
 chgrp -R $PROJ_GROUP /nfs
-chmod -R g+w /nfs
+chmod -R g+sw /nfs
 
 # remove unused PPAs
 find /etc/apt/sources.list.d/ -type f -print -delete
