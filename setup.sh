@@ -55,9 +55,21 @@ chmod -R g+sw /nfs
 find /etc/apt/sources.list.d/ -type f -print -delete
 
 # base software
-sudo apt-get update
-sudo apt-get install -y zsh fonts-powerline git tmux neovim python3-neovim build-essential cmake gawk htop bmon
-sudo apt-get autoremove -y
+apt-get update
+apt-get install -y zsh fonts-powerline git tmux neovim python3-neovim build-essential cmake gawk htop bmon
+apt-get autoremove -y
+
+# docker
+apt-get install -y \
+    apt-transport-https \
+    ca-certificates \
+    curl \
+    gnupg \
+    lsb-release
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" > /etc/apt/sources.list.d/docker.list
+apt-get update
+apt-get install -y docker-ce docker-ce-cli containerd.io
 
 # additional software
 curl -s https://api.github.com/repos/BurntSushi/ripgrep/releases/latest |
@@ -98,7 +110,7 @@ curl -s https://api.github.com/repos/dalance/procs/releases/latest |
 
 echo "Setting default editor to neovim"
 for exe in vi vim editor; do
-    sudo update-alternatives --install /usr/bin/$exe $exe /usr/bin/nvim 60
+    update-alternatives --install /usr/bin/$exe $exe /usr/bin/nvim 60
 done
 
 echo "Setting default umask"
