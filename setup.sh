@@ -56,7 +56,7 @@ find /etc/apt/sources.list.d/ -type f -print -delete
 
 # base software
 apt-get update
-apt-get install -y zsh fonts-powerline git tmux neovim python3-neovim build-essential cmake gawk htop bmon
+apt-get install -y zsh fonts-powerline git git-lfs tmux neovim python3-neovim build-essential cmake gawk htop bmon
 apt-get autoremove -y
 
 # docker
@@ -70,6 +70,12 @@ curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/
 echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" > /etc/apt/sources.list.d/docker.list
 apt-get update
 apt-get install -y docker-ce docker-ce-cli containerd.io
+# daemon config file
+cat <<CFG > /etc/docker/daemon.json
+{
+    "data-root": "/data/docker-data"
+}
+CFG
 
 # additional software
 curl -s https://api.github.com/repos/BurntSushi/ripgrep/releases/latest |

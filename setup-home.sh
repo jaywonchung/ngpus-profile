@@ -47,7 +47,10 @@ config_user() {
     mkdir -p /data/cache/$TARGET_USER && sudo mount --bind /data/cache/$TARGET_USER $TARGET_HOME/.cache
 
     echo "Setting default shell to zsh"
-    sudo usermod -s /usr/bin/zsh $TARGET_USER
+    sudo chsh -s /usr/bin/zsh $TARGET_USER
+
+    echo "Docker access"
+    sudo usermod -aG docker $TARGET_USER
 
     # dotfiles
     echo "Linking dotfiles"
