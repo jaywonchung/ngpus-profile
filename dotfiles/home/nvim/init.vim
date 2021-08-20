@@ -1,29 +1,8 @@
+" Ansible managed
+
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" User: Aetf - aetf@unlimitedcodeworks.xyz
-" Maintainer:
-"       Amir Salihefendic
-"       http://amix.dk - amix@amix.dk
-"
-" Version:
-"       5.0 - 29/05/12 15:43:36
-"
-" Blog_post:
-"       http://amix.dk/blog/post/19691#The-ultimate-Vim-configuration-on-Github
-"
-" Awesome_version:
-"       Get this config, nice color schemes and lots of plugins!
-"
-"       Install the awesome version from:
-"
-"           https://github.com/amix/vimrc
-"
-" Syntax_highlighted:
-"       http://amix.dk/vim/vimrc.html
-"
-" Raw_version:
-"       http://amix.dk/vim/vimrc.txt
-"
 " Sections:
+"    -> Neovim specific
 "    -> Plugins
 "    -> General
 "    -> VIM user interface
@@ -37,28 +16,56 @@
 "    -> vimgrep searching and cope displaying
 "    -> Spell checking
 "    -> Misc
-"    -> Neovim specific
 "    -> Helper functions
-"
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" => Neovim specific
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+if has('nvim')
+    " Force to use system python internally which has python-neovim installed
+    if exists("$VIRTUAL_ENV") || exists("$CONDA_PREFIX")
+        let g:python3_host_prog=substitute(system("which -a python3 | head -n2 | tail -n1"), "\n", '', 'g')
+    else
+        let g:python3_host_prog=substitute(system("which python3"), "\n", '', 'g')
+    endif
+    " Disable python2
+    let g:loaded_python_provider=1
+    let g:python_host_skip_check=1
+    " Use true colors
+    set termguicolors
+    " Load Archlinux specific vimfiles
+    set runtimepath^=/usr/share/vim/vimfiles
+    " ESC for exit terminal mode
+    tnoremap <Esc> <C-\><C-n>
+    " Window navigation in terminal mode
+    tnoremap <C-h> <C-\><C-n><C-w>h
+    tnoremap <C-j> <C-\><C-n><C-w>j
+    tnoremap <C-k> <C-\><C-n><C-w>k
+    tnoremap <C-l> <C-\><C-n><C-w>l
+    " ShaDa
+    set shada='1000,f1,<500,:100,/100,h,%
+    " Turn off list mode in terminal
+    autocmd TermOpen * setlocal nolist
+    " Live command preview
+    set inccommand=split
+endif
+
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Plugins
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Load plugins early so we can use them.
 
-" Set bash as shell, because fish is not compatible to vim-plug
-"set shell=/usr/bin/bash
-
 " Automatically download vim-plug
-if empty(glob('~/.vim/autoload/plug.vim'))
-  silent !curl -fLo ~/.vim/autoload/plug.vim --create-dirs
-    \ https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+if empty(glob(stdpath('data') . '/site/autoload/plug.vim'))
+  silent exe '!curl -fLo ' . stdpath('data') . '/site/autoload/plug.vim'
+    \ . ' --create-dirs ' . 'https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim'
   autocmd VimEnter * PlugInstall --sync | source $MYVIMRC
 endif
 
 " Activate plugin Manager vim-plug
-silent! call plug#begin('~/.vim/plugged')
+silent! call plug#begin(stdpath('data') . '/plugged')
 
 " vim colorscheme with neovim in mind
 Plug 'freeo/vim-kalisi'
@@ -66,14 +73,11 @@ Plug 'freeo/vim-kalisi'
 " Transparent background
 Plug 'miyakogi/seiya.vim'
 
-" syntax checking using external checkers
-Plug 'scrooloose/syntastic'
-
-" support for editing fish scripts
-Plug 'dag/vim-fish'
-
 " Rust language support
 Plug 'rust-lang/rust.vim'
+
+" TOML language
+Plug 'cespare/vim-toml'
 
 " CtrlP for fuzzy finder
 Plug 'ctrlpvim/ctrlp.vim'
@@ -81,10 +85,13 @@ Plug 'ctrlpvim/ctrlp.vim'
 " Git gutter
 Plug 'airblade/vim-gitgutter'
 
+" Highlight yank region
+Plug 'machakann/vim-highlightedyank'
+
 " Anyfold for smart indent based folding
 Plug 'pseewald/vim-anyfold'
 
-" Fold Cycling with one key
+" Fold cycling with one key
 Plug 'arecarn/vim-fold-cycle'
 
 " Indent text object
@@ -115,17 +122,9 @@ if !has('nvim')
     Plug 'ConradIrwin/vim-bracketed-paste'
 endif
 
-" YouCompleteMe
-function! BuildYCM(info)
-    " info is a dictionary with 3 fields
-    " - name:   name of the plugin
-    " - status: 'installed', 'updated', or 'unchanged'
-    " - force:  set on PlugInstall! or PlugUpdate!
-    if a:info.status == 'installed' || a:info.force
-        !./install.py --clang-completer --rust-completer
-    endif
-endfunction
-Plug 'Valloric/YouCompleteMe', { 'for': ['c', 'cpp', 'python', 'csharp', 'javascript', 'rust'], 'do': function('BuildYCM')}
+" Language server based auto completion
+Plug 'neoclide/coc.nvim', {'branch': 'release'}
+
 
 " vim-airline for neovim, which can't use powerline
 Plug 'vim-airline/vim-airline'
@@ -158,30 +157,18 @@ Plug 'yangmillstheory/vim-snipe'
 " Initialize plugin system
 call plug#end()
 
-" Settings for syntastic
-" this is handled by vim-airline
-"set statusline+=%#warningmsg#
-"set statusline+=%{SyntasticStatuslineFlag()}
-"set statusline+=%*
+" Settings for coc.vim
+" press `tab` to pring up auto completion at a part of words
+inoremap <silent><expr> <TAB>
+      \ pumvisible() ? "\<C-n>" :
+      \ <SID>check_back_space() ? "\<TAB>" :
+      \ coc#refresh()
+inoremap <expr><S-TAB> pumvisible() ? "\<C-p>" : "\<C-h>"
 
-let g:syntastic_always_populate_loc_list = 1
-let g:syntastic_auto_loc_list = 1
-let g:syntastic_check_on_open = 0
-let g:syntastic_check_on_wq = 1
-
-let g:syntastic_cpp_checkers = []
-let g:syntastic_aggregate_errors = 1
-
-" Settings for vim-fish
-"     Let :make to use fish for syntax checking
-autocmd FileType fish compiler fish
-"     Enable folding of block structures in fish
-autocmd FileType fish setlocal foldmethod=expr
-
-" Settings for YouCompleteMe
-let g:ycm_global_ycm_extra_conf = '~/.vim/ycm_extra_conf.py'
-let g:ycm_confirm_extra_conf = 0
-let g:ycm_autoclose_preview_window_after_completion = 1
+function! s:check_back_space() abort
+  let col = col('.') - 1
+  return !col || getline('.')[col - 1]  =~# '\s'
+endfunction
 
 " Settings for CtrlP
 let g:ctrlp_map = '<c-p>'
@@ -196,8 +183,30 @@ let g:seiya_auto_enable=1 " this is disabled in ginit.vim for neovim-qt, which d
 autocmd Filetype * AnyFoldActivate
 set foldlevel=1
 set foldminlines=3
-" unfolds the line in which the cursor is located when opening a file
+"" unfolds the line in which the cursor is located when opening a file
 autocmd User anyfoldLoaded normal zv
+
+" NERD Tree configuration
+map <C-n> :NERDTreeToggle<CR>
+
+autocmd StdinReadPre * let s:std_in=1
+"" open NERDTree if vim starts up on opening a directory
+autocmd VimEnter * if argc() == 1 && isdirectory(argv()[0]) && !exists("s:std_in") | exe 'NERDTree' argv()[0] | wincmd p | ene | endif
+"" close vim if the only window left open is a NERDTree
+autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
+
+" Auto close
+let g:autoclose_vim_commentmode=1
+
+" NERD Commenter configuration
+"" Add spaces after comment delimiters by default
+let g:NERDSpaceDelims = 1
+
+"" Use compact syntax for prettified multi-line comments
+let g:NERDCompactSexyComs = 1
+
+"" Align line-wise comment delimiters flush left instead of following code indentation
+let g:NERDDefaultAlign = 'left'
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => General
@@ -214,8 +223,8 @@ set autoread
 
 " With a map leader it's possible to do extra key combinations
 " like <leader>w saves the current file
-let mapleader = "."
-let g:mapleader = "."
+let mapleader = "\\"
+let g:mapleader = "\\"
 
 " Fast saving
 nmap <leader>w :w!<cr>
@@ -227,6 +236,19 @@ command W w !sudo tee % > /dev/null
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => VIM user interface
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Change cursor style between modes. This works for GUI in vim, and also for terminal in nvim
+set guicursor=n-v-c:block-Cursor/lCursor-blinkon0,i-ci:ver25-Cursor/lCursor,r-cr:hor20-Cursor/lCursor
+if has('nvim-0.2.0') && !has('nvim-0.2.1')
+    " There's bug in 0.2.0 that flipping blinkon0 and blinkon1 on Konsole
+    set guicursor=n-v-c:block-Cursor/lCursor-blinkon1,i-ci:ver25-Cursor/lCursor-blinkon1,r-cr:hor20-Cursor/lCursor-blinkon1
+endif
+" For vim, extra escape sequence is needed for cursor change in terminal
+if !has('nvim')
+    let &t_SI = "\<Esc>]50;CursorShape=1\x7"
+    let &t_SR = "\<Esc>]50;CursorShape=2\x7"
+    let &t_EI = "\<Esc>]50;CUrsorShape=0\x7"
+endif
+
 " Show hybrid line numbers.
 set relativenumber
 set number
@@ -318,10 +340,6 @@ if has('nvim')
     let g:terminal_color_15 = '#ffffff'
 endif
 
-" Change cursor shape
-let &t_SI = "\<Esc>]50;CursorShape=1\x7"
-let &t_EI = "\<Esc>]50;CUrsorShape=0\x7"
-
 " Set extra options when running in GUI mode
 if has("gui_running")
     set guioptions-=T
@@ -347,6 +365,14 @@ set nobackup
 set nowb
 set noswapfile
 
+" Toggle Undotree window
+map <leader>u :UndotreeToggle<cr>
+
+" Enable persistent undo
+if has("persistent_undo")
+    set undodir=~/.vim/undo
+    set undofile
+endif
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Text, tab and indent related
@@ -540,31 +566,6 @@ map <leader>q :e /tmp/workspace<cr>
 " Toggle paste mode on and off
 map <leader>pp :setlocal paste!<cr>
 
-
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" => Neovim specific
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-if has('nvim')
-    " Use true colors
-    set termguicolors
-    " Change cursor shape between modes
-    :let $NVIM_TUI_ENABLE_CURSOR_SHAPE=1
-    " Load Archlinux specific vimfiles
-    set runtimepath^=/usr/share/vim/vimfiles
-    " ESC for exit terminal mode
-    tnoremap <Esc> <C-\><C-n>
-    " Window navigation in terminal mode
-    tnoremap <C-h> <C-\><C-n><C-w>h
-    tnoremap <C-j> <C-\><C-n><C-w>j
-    tnoremap <C-k> <C-\><C-n><C-w>k
-    tnoremap <C-l> <C-\><C-n><C-w>l
-    " ShaDa
-    set shada='1000,f1,<500,:100,/100,h,%
-    " Turn off list mode in terminal
-    autocmd TermOpen * setlocal nolist
-    " Live command preview
-    set inccommand=split
-endif
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Helper functions
