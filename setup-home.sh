@@ -52,6 +52,13 @@ config_user() {
     echo "Docker access"
     sudo usermod -aG docker $TARGET_USER
 
+    echo "NodeJS"
+    export NVM_DIR=$TARGET_HOME/.local/share/nvm
+    # tell nvm to not touch our zshrc
+    export PROFILE=/dev/null
+    mkdir -p $NVM_DIR
+    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.38.0/install.sh | bash
+
     # dotfiles
     echo "Linking dotfiles"
     make_dir $TARGET_HOME/.local
@@ -74,8 +81,8 @@ config_user() {
 
     # initialize vim as if on first login
     sudo su --login $TARGET_USER <<EOSU
-zsh --login -c "umask 022 && source \$HOME/.zshrc && echo Initialized zsh" &
-nvim --headless +PlugInstall! +qall > /dev/null
+zsh --login -c "umask 022 && source \$HOME/.zshrc && echo Initialized zsh" > $TARGET_HOME/zsh-setup.log &
+nvim -es -u $TARGET_HOME/.config/nvim/init.vim -i NONE -c "PlugInstall" -c "qa" > $TARGET_HOME/vim-setup.log &
 wait
 EOSU
 
