@@ -58,9 +58,9 @@ endif
 " Load plugins early so we can use them.
 
 " Automatically download vim-plug
-if empty(glob(stdpath('data') . '/site/autoload/plug.vim'))
-  silent exe '!curl -fLo ' . stdpath('data') . '/site/autoload/plug.vim'
-    \ . ' --create-dirs ' . 'https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim'
+let data_dir = has('nvim') ? stdpath('data') . '/site' : '~/.vim'
+if empty(glob(data_dir . '/autoload/plug.vim'))
+  silent execute '!curl -fLo '.data_dir.'/autoload/plug.vim --create-dirs https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim'
   autocmd VimEnter * PlugInstall --sync | source $MYVIMRC
 endif
 
@@ -125,7 +125,6 @@ endif
 " Language server based auto completion
 Plug 'neoclide/coc.nvim', {'branch': 'release'}
 
-
 " vim-airline for neovim, which can't use powerline
 Plug 'vim-airline/vim-airline'
 Plug 'vim-airline/vim-airline-themes'
@@ -158,6 +157,7 @@ Plug 'yangmillstheory/vim-snipe'
 call plug#end()
 
 " Settings for coc.vim
+let g:coc_global_extensions = ['coc-json', 'coc-git', 'coc-rust-analyzer', 'coc-pyright', 'coc-clangd']
 " press `tab` to pring up auto completion at a part of words
 inoremap <silent><expr> <TAB>
       \ pumvisible() ? "\<C-n>" :
