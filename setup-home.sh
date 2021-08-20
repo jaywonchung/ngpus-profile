@@ -64,7 +64,7 @@ config_user() {
     echo "Linking dotfiles"
     make_dir $TARGET_HOME/.local
     link_files $CONFIG_DIR/dotfiles/home $TARGET_HOME "."
-    ln -sf $CONFIG_DIR/dotfiles/scripts $TARGET_HOME/.local/bin
+    ln -nsf $CONFIG_DIR/dotfiles/scripts $TARGET_HOME/.local/bin
 
     # common directories
     make_dir $TARGET_HOME/tools
