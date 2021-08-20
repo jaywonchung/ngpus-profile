@@ -48,7 +48,10 @@ lan.link_multiplexing = True
 nfsServer = request.RawPC(nfsServerName)
 nfsServer.disk_image = params.os_image
 nfsServer.hardware_type = params.nfs_hw
-lan.addInterface(nfsServer.addInterface())
+nfsServerInterface = nfsServer.addInterface()
+nfsServerInterface.addAddress(rspec.IPv4Address("192.168.1.250", "255.255.255.0"))
+lan.addInterface(nfsServerInterface)
+nfsServer.addService(rspec.Execute(shell="bash", command="/local/repository/setup-firewall.sh"))
 nfsServer.addService(rspec.Execute(shell="bash", command="/local/repository/nfs-server.sh"))
 
 # Special node that represents the ISCSI device where the dataset resides
@@ -73,7 +76,13 @@ for i in range(params.num_nodes):
     node.hardware_type = params.node_hw
     bs = node.Blockstore("bs-{}".format(i + 1), "/data")
     bs.size = "200GB"
-    lan.addInterface(node.addInterface("if1"))
+    intf = node.addInterface("if1")
+    if node.hardware_type == 'r7525':
+        # r7525 requires special config to use its normal 25Gbps experimental network
+        intf.bandwidth = 25600
+    intf.addAddress(rspec.IPv4Address("192.168.1.{}".format(i + 1), "255.255.255.0"))
+    lan.addInterface(intf)
+    nfsServer.addService(rspec.Execute(shell="bash", command="/local/repository/setup-firewall.sh"))
     node.addService(rspec.Execute(shell="bash", command="/local/repository/nfs-client.sh"))
     if len(params.setup) > 0:
         node.addService(
