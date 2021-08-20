@@ -16,7 +16,7 @@ fi
 # Setup firewall
 echo "Setup firewall"
 ufw allow ssh
-ufw allow from 10.10.1.0/24
+ufw allow from 192.168.0.0/16
 ufw default deny
 ufw enable
 

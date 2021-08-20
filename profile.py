@@ -82,7 +82,7 @@ for i in range(params.num_nodes):
         intf.bandwidth = 25600
     intf.addAddress(rspec.IPv4Address("192.168.1.{}".format(i + 1), "255.255.255.0"))
     lan.addInterface(intf)
-    nfsServer.addService(rspec.Execute(shell="bash", command="/local/repository/setup-firewall.sh"))
+    node.addService(rspec.Execute(shell="bash", command="/local/repository/setup-firewall.sh"))
     node.addService(rspec.Execute(shell="bash", command="/local/repository/nfs-client.sh"))
     if len(params.setup) > 0:
         node.addService(
