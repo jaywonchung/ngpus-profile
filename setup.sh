@@ -177,6 +177,6 @@ if [[ -d /nfs/cifar-automl ]]; then
 fi
 
 # setup homes
-$SELF_DIR/setup-home.sh peifeng JIACHEN
+$SELF_DIR/setup-home.sh "$@"
 
 date > /local/repository/.setup-done
