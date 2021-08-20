@@ -56,6 +56,7 @@ config_user() {
     export NVM_DIR=$TARGET_HOME/.local/share/nvm
     # tell nvm to not touch our zshrc
     export PROFILE=/dev/null
+    export NODE_VERSION=node
     mkdir -p $NVM_DIR
     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.38.0/install.sh | bash
 
