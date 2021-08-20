@@ -1,7 +1,6 @@
 # Ansible managed
 
 export NVM_DIR="$XDG_DATA_HOME/nvm"
-source /usr/share/nvm/bash_completion
 
 # lazy loading nvm to avoid it slow down shell startup
 # lazy loading the bash completions does not save us meaningful shell startup time, so we won't do it
