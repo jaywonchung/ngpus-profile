@@ -79,7 +79,7 @@ CFG
 
 # cuda driver
 if lspci | grep -q -i nvidia; then
-    apt-get install nvidia-headless-470-server nvidia-utils-470-server
+    apt-get install -y nvidia-headless-470-server nvidia-utils-470-server
     systemctl restart docker
 fi
 
