@@ -83,12 +83,16 @@ if lspci | grep -q -i nvidia; then
     curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list > /etc/apt/sources.list.d/nvidia-docker.list
     apt-get update
     apt-get install -y nvidia-docker2
+    # add gpu as generic resource on node
+    nvidia-smi --query-gpu=uuid --format=csv,noheader | while read uuid ; do
+        jq --arg value "gpu=$uuid" '."node-generic-resources" |= . + [$value]' < /etc/docker/daemon.json > tmp.$$.json && mv tmp.$$.json /etc/docker/daemon.json
+    done
+    jq '. + { "default-runtime": "nvidia" }' < /etc/docker/daemon.json > tmp.$$.json && mv tmp.$$.json /etc/docker/daemon.json
 fi
 
 # daemon config file after possible installation of cuda driver, as that may change this file
 jq '. + { "data-root": "/data/docker-data" }' < /etc/docker/daemon.json > tmp.$$.json && mv tmp.$$.json /etc/docker/daemon.json
 systemctl restart docker
-
 
 # additional software
 curl -s https://api.github.com/repos/BurntSushi/ripgrep/releases/latest |
