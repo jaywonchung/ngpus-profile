@@ -77,6 +77,12 @@ cat <<CFG > /etc/docker/daemon.json
 }
 CFG
 
+# cuda driver
+if lspci | grep -q -i nvidia; then
+    apt-get install nvidia-headless-470-server nvidia-utils-470-server
+    systemctl restart docker
+fi
+
 # additional software
 curl -s https://api.github.com/repos/BurntSushi/ripgrep/releases/latest |
     grep -oP "browser_download_url.*\Khttp.*amd64.deb" |
