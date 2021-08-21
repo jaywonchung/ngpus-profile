@@ -56,7 +56,7 @@ find /etc/apt/sources.list.d/ -type f -print -delete
 
 # base software
 apt-get update
-apt-get install -y zsh fonts-powerline git git-lfs tmux neovim python3-neovim build-essential cmake gawk htop bmon
+apt-get install -y zsh fonts-powerline git git-lfs tmux neovim python3-neovim build-essential cmake gawk htop bmon jq
 apt-get autoremove -y
 
 # docker
@@ -70,18 +70,25 @@ curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/
 echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" > /etc/apt/sources.list.d/docker.list
 apt-get update
 apt-get install -y docker-ce docker-ce-cli containerd.io
-# daemon config file
-cat <<CFG > /etc/docker/daemon.json
-{
-    "data-root": "/data/docker-data"
-}
-CFG
 
 # cuda driver
 if lspci | grep -q -i nvidia; then
     apt-get install -y nvidia-headless-470-server nvidia-utils-470-server
-    systemctl restart docker
+
+    modprobe -r nouveau || true
+    modprobe nvidia || true
+
+    distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
+    curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | apt-key add -
+    curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list > /etc/apt/sources.list.d/nvidia-docker.list
+    apt-get update
+    apt-get install -y nvidia-docker2
 fi
+
+# daemon config file after possible installation of cuda driver, as that may change this file
+jq '. + { "data-root": "/data/docker-data" }' < /etc/docker/daemon.json > tmp.$$.json && mv tmp.$$.json /etc/docker/daemon.json
+systemctl restart docker
+
 
 # additional software
 curl -s https://api.github.com/repos/BurntSushi/ripgrep/releases/latest |
