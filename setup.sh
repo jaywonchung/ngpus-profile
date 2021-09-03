@@ -37,11 +37,40 @@ if [[ -f /local/repository/.setup-done ]]; then
     exit
 fi
 
+# various mount points
+# TODO
+
 # mount /tmp as tmpfs
-mount -t tmpfs tmpfs /tmp
+cat > /etc/systemd/system/tmp.mount <<EOF
+[Unit]
+Description=Temporary Directory /tmp
+
+[Mount]
+What=tmpfs
+Where=/tmp
+Type=tmpfs
+Options=mode=1777,strictatime,nosuid,nodev,size=50%,nr_inodes=400k
+
+[Install]
+WantedBy=local-fs.target
+EOF
+systemctl daemon-reload && systemctl enable --now tmp.mount
 
 # mount /opt from /data
-mkdir -p /data/opt && mount --bind /data/opt /opt
+cat > /etc/systemd/system/opt.mount <<EOF
+[Unit]
+Description=Bind /opt to /data/opt
+
+[Mount]
+What=/data/opt
+Where=/opt
+Type=none
+Options=bind
+
+[Install]
+WantedBy=local-fs.target
+EOF
+systemctl daemon-reload && systemctl enable --now opt.mount
 
 # fix /data permission
 chgrp -R $PROJ_GROUP /data

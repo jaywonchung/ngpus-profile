@@ -43,8 +43,21 @@ config_user() {
     echo "Configuring $TARGET_USER"
 
     echo "Redirect cache to /data"
-    mkdir -p $TARGET_HOME/.cache
-    mkdir -p /data/cache/$TARGET_USER && sudo mount --bind /data/cache/$TARGET_USER $TARGET_HOME/.cache
+    local mount_unit=$(systemd-escape --path --suffix=mount $TARGET_HOME/.cache)
+    cat > /etc/systemd/user/$mount_unit <<EOF
+[Unit]
+Description=Bind $TARGET_HOME/.cache to /data/cache/$TARGET_USER
+
+[Mount]
+What=/data/cache/$TARGET_USER
+Where=$TARGET_HOME/.cache
+Type=none
+Options=bind
+
+[Install]
+WantedBy=default.target
+EOF
+    sudo -u $TARGET_USER systemctl daemon-reload --user && sudo -u $TARGET_USER systemctl --user enable --now $mount_unit
 
     echo "Setting default shell to zsh"
     sudo chsh -s /usr/bin/zsh $TARGET_USER
@@ -56,7 +69,7 @@ config_user() {
     export NVM_DIR=$TARGET_HOME/.local/share/nvm
     # tell nvm to not touch our zshrc
     export PROFILE=/dev/null
-    export NODE_VERSION=node
+    export NODE_VERSION=latest
     mkdir -p $NVM_DIR
     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.38.0/install.sh | bash
 
