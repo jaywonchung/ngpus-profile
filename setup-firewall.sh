@@ -15,8 +15,6 @@ fi
 
 # Setup firewall
 echo "Setup firewall"
-ufw allow ssh
-ufw allow from 192.168.0.0/16
-ufw default deny
-ufw enable
-
+apt-get install -y firewalld
+firewall-cmd --zone=trusted --add-source=192.168.0.0/16
+firewall-cmd --runtime-to-permanent

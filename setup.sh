@@ -123,6 +123,12 @@ fi
 jq '. + { "data-root": "/data/docker-data" }' < /etc/docker/daemon.json > tmp.$$.json && mv tmp.$$.json /etc/docker/daemon.json
 systemctl restart docker
 
+# default to block traffic to docker
+firewall-cmd --zone=docker --set-target=default --permanent
+firewall-cmd --reload
+# restart docker because firewall reload messes with its network settings
+systemctl restart docker
+
 # additional software
 curl -s https://api.github.com/repos/BurntSushi/ripgrep/releases/latest |
     grep -oP "browser_download_url.*\Khttp.*amd64.deb" |
