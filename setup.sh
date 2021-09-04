@@ -37,9 +37,6 @@ if [[ -f /local/repository/.setup-done ]]; then
     exit
 fi
 
-# various mount points
-# TODO
-
 # mount /tmp as tmpfs
 cat > /etc/systemd/system/tmp.mount <<EOF
 [Unit]
@@ -112,15 +109,15 @@ if lspci | grep -q -i nvidia; then
     curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list > /etc/apt/sources.list.d/nvidia-docker.list
     apt-get update
     apt-get install -y nvidia-docker2
+    (cat /etc/docker/daemon.json 2>/dev/null || echo "{}") | jq '. + { "default-runtime": "nvidia" }' > tmp.$$.json && mv tmp.$$.json /etc/docker/daemon.json
     # add gpu as generic resource on node
     nvidia-smi --query-gpu=uuid --format=csv,noheader | while read uuid ; do
         jq --arg value "gpu=$uuid" '."node-generic-resources" |= . + [$value]' < /etc/docker/daemon.json > tmp.$$.json && mv tmp.$$.json /etc/docker/daemon.json
     done
-    jq '. + { "default-runtime": "nvidia" }' < /etc/docker/daemon.json > tmp.$$.json && mv tmp.$$.json /etc/docker/daemon.json
 fi
 
 # daemon config file after possible installation of cuda driver, as that may change this file
-jq '. + { "data-root": "/data/docker-data" }' < /etc/docker/daemon.json > tmp.$$.json && mv tmp.$$.json /etc/docker/daemon.json
+(cat /etc/docker/daemon.json 2>/dev/null || echo "{}") | jq '. + { "data-root": "/data/docker-data" }' > tmp.$$.json && mv tmp.$$.json /etc/docker/daemon.json
 systemctl restart docker
 
 # default to block traffic to docker
