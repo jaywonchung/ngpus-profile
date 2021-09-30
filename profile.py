@@ -74,7 +74,7 @@ for i in range(params.num_nodes):
     node = request.RawPC("node-{}".format(i + 1))
     node.disk_image = params.os_image
     node.hardware_type = params.node_hw
-    bs = node.Blockstore("bs-{}".format(i + 1), "/data")
+    bs = node.Blockstore("bs-{}".format(i + 1), "/")
     bs.size = "200GB"
     intf = node.addInterface("if1")
     if node.hardware_type == 'r7525':

@@ -53,6 +53,9 @@ WantedBy=local-fs.target
 EOF
 systemctl daemon-reload && systemctl enable --now tmp.mount
 
+# although we now mount 200G to / directly, we create a /data for compatibility
+mkdir /data
+
 # mount /opt from /data
 cat > /etc/systemd/system/opt.mount <<EOF
 [Unit]
