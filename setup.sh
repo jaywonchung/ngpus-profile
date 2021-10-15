@@ -102,6 +102,7 @@ apt-get install -y docker-ce docker-ce-cli containerd.io
 
 # cuda driver
 if lspci | grep -q -i nvidia; then
+    apt-get purge -y nvidia* libnvidia*
     apt-get install -y nvidia-headless-470-server nvidia-utils-470-server
 
     modprobe -r nouveau || true
