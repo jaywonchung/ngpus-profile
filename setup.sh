@@ -22,7 +22,7 @@ if [[ -d /local/repository ]]; then
     git checkout master
 
     changed=false
-    git remote update && git status -uno | grep -q 'Profile repo branch is behind' && changed=true
+    git remote update && git status -uno | grep -q 'branch is behind' && changed=true
     if $changed; then
         git pull
         echo "Updated successfully, reexec setup.sh"
