@@ -99,6 +99,14 @@ curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --batch --yes --de
 echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" > /etc/apt/sources.list.d/docker.list
 apt-get update
 apt-get install -y docker-ce docker-ce-cli containerd.io
+apt-get purge -y docker-compose
+apt-get autoremove -y
+# docker-compose
+curl -s https://api.github.com/repos/docker/compose/releases/latest |
+    grep -oP "browser_download_url.*\Khttp.*linux.*x86_64" |
+    xargs -n 1 curl -JL -o docker-compose &&
+    install -D docker-compose /usr/local/libexec/docker/cli-plugins/docker-compose &&
+    rm docker-compose
 
 # cuda driver
 if lspci | grep -q -i nvidia; then
