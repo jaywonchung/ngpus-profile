@@ -1,2 +1,0 @@
-#! /usr/bin/bash
-[ $# -eq 7 ] && extMerge "$2" "$5"
