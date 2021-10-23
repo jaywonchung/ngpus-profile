@@ -1,14 +1,16 @@
 #!/bin/bash
-set -ex
 
 # Log output of this script to syslog.
 # https://urbanautomaton.com/blog/2014/09/09/redirecting-bash-script-output-to-syslog/
 exec 1> >(logger -s -t $(basename $0)) 2>&1
 
-# am i done
-if [[ -f /local/repository/.setup-done ]]; then
-    exit
+# is this after a reboot?
+nvidia-smi
+if [ "$?" = "0"]; then
+  exit
 fi
+
+set -ex
 
 PROJ_GROUP=gaia-PG0
 SELF_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
