@@ -1,6 +1,10 @@
 #!/bin/bash
 set -ex
 
+# Log output of this script to syslog.
+# https://urbanautomaton.com/blog/2014/09/09/redirecting-bash-script-output-to-syslog/
+exec 1> >(logger -s -t $(basename $0)) 2>&1
+
 # am i done
 if [[ -f /local/repository/.setup-done ]]; then
     exit

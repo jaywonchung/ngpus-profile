@@ -27,7 +27,7 @@ params = pc.bindParameters()
 request = pc.makeRequestRSpec()
 
 # add lan
-lan = request.LAN("nfslan")
+lan = request.LAN("nfsLan")
 lan.best_effort = True
 lan.vlan_tagging = True
 lan.link_multiplexing = True
@@ -39,8 +39,8 @@ nfsServer.hardware_type = params.nfs_hw
 nfsServerInterface = nfsServer.addInterface()
 nfsServerInterface.addAddress(rspec.IPv4Address("192.168.1.250", "255.255.255.0"))
 lan.addInterface(nfsServerInterface)
-nfsServer.addService(rspec.Execute(shell="bash", command="/local/repository/setup-firewall.sh >> /local/repository/setup-firewall.log 2>&1"))
-nfsServer.addService(rspec.Execute(shell="bash", command="/local/repository/nfs-server.sh >> /local/repository/nfs-server.log 2>&1"))
+nfsServer.addService(rspec.Execute(shell="bash", command="/local/repository/setup-firewall.sh"))
+nfsServer.addService(rspec.Execute(shell="bash", command="/local/repository/nfs-server.sh"))
 
 # Special node that represents the ISCSI device where the dataset resides
 nfsDirectory = "/nfs"
@@ -71,13 +71,13 @@ for i in range(params.num_nodes):
         intf.bandwidth = 25600
     intf.addAddress(rspec.IPv4Address("192.168.1.{}".format(i + 1), "255.255.255.0"))
     lan.addInterface(intf)
-    node.addService(rspec.Execute(shell="bash", command="/local/repository/setup-firewall.sh >> /local/repository/setup-firewall.log 2>&1"))
-    node.addService(rspec.Execute(shell="bash", command="/local/repository/nfs-client.sh >> /local/repository/nfs-client.log 2>&1"))
+    node.addService(rspec.Execute(shell="bash", command="/local/repository/setup-firewall.sh"))
+    node.addService(rspec.Execute(shell="bash", command="/local/repository/nfs-client.sh"))
     if len(params.setup) > 0:
         node.addService(
             rspec.Execute(
                 shell="bash",
-                command="/local/repository/{} {} >> /local/repository/{}.log 2>&1".format(params.setup, params.user_name, params.setup)
+                command="/local/repository/{} {}".format(params.setup, params.user_name)
             )
         )
 

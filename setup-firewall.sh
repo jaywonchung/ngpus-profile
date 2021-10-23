@@ -1,6 +1,10 @@
 #! /bin/bash
 set -ex
 
+# Log output of this script to syslog.
+# https://urbanautomaton.com/blog/2014/09/09/redirecting-bash-script-output-to-syslog/
+exec 1> >(logger -s -t $(basename $0)) 2>&1
+
 PROJ_GROUP=gaia-PG0
 SELF_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
