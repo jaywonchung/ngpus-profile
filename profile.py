@@ -16,11 +16,11 @@ imageList = [
 
 pc = portal.Context()
 pc.defineParameter("num_nodes", "Number of nodes", portal.ParameterType.INTEGER, 1)
-pc.defineParameter("user_name", "Username with which to setup the node", portal.ParameterType.STRING, "jwnchung")
-pc.defineParameter("project_group_name", "Name of project group", portal.ParameterType.STRING, "gaia-PG0")
-pc.defineParameter("os_image", "Select OS image", portal.ParameterType.IMAGE, imageList[0], imageList)
-pc.defineParameter("node_hw", "GPU Node type to use", portal.ParameterType.NODETYPE, "r7525")
-pc.defineParameter("nfs_hw", "NFS node type to use", portal.ParameterType.NODETYPE, "c8220")
+pc.defineParameter("user_name", "Username", portal.ParameterType.STRING, "jwnchung")
+pc.defineParameter("project_group_name", "Project group name", portal.ParameterType.STRING, "gaia-PG0")
+pc.defineParameter("os_image", "OS image", portal.ParameterType.IMAGE, imageList[0], imageList)
+pc.defineParameter("node_hw", "GPU Node type", portal.ParameterType.NODETYPE, "r7525")
+pc.defineParameter("nfs_hw", "NFS node type", portal.ParameterType.NODETYPE, "c8220")
 pc.defineParameter("dataset", "Dataset URN backing the NFS storage, leave empty to use an ephermal 200G blockstorage on the nfs server", portal.ParameterType.STRING, "", advanced=True)
 params = pc.bindParameters()
 

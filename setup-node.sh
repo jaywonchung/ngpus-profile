@@ -129,6 +129,7 @@ if [[ "$TARGET_USER" = "jwnchung" ]]; then
   su "$TARGET_USER"
   source <(curl https://jaewonchung.me/install-dotfiles.sh)
   CONDA_PREFIX=/opt/miniconda3 bash ~/.dotmodules/inventory/miniconda.sh
+  sudo reboot
 fi
 
 # for nvidia driver
