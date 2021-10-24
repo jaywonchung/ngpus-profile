@@ -44,7 +44,7 @@ if [[ -d /local/repository ]]; then
 fi
 
 # am i done
-if [[ -f /local/repository/.setup-done ]]; then
+if [[ -f /local/.setup-done ]]; then
     exit
 fi
 
@@ -147,7 +147,7 @@ fi
 echo "Fixing permission"
 chown -R $TARGET_USER:$TARGET_GROUP $TARGET_HOME
 
-TZ='America/Detroit' date > /local/repository/.setup-done
+TZ='America/Detroit' date > /local/.setup-done
 
 # for nvidia driver
 reboot
