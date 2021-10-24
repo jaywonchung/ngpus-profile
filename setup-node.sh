@@ -36,8 +36,8 @@ if [[ -d /local/repository ]]; then
     git remote update && git status -uno | grep -q 'branch is behind' && changed=true
     if $changed; then
         git pull
-        echo "Updated successfully, reexec setup.sh"
-        exec /local/repository/setup.sh
+        echo "Updated successfully, reexec $0"
+        exec "$0"
     else
         echo "Up-to-date"
     fi
