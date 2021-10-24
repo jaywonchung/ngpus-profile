@@ -2,7 +2,7 @@
 
 Instructions:
 
-Wait for the setup script to finish. Then GPU nodes will reboot in order to load their NVIDIA drivers. After reboot, you may login. To use Jae-Won's dotfiles, run `source <(curl https://raw.githubusercontent.com/jaywonchung/dotfiles/master/install.sh)`. Then install miniconda3 with `CONDA_PREFIX=/opt/miniconda3 bash ~/.dotmodules/inventory/miniconda.sh`.
+Wait for the setup script to finish. Then GPU nodes will reboot in order to load their NVIDIA drivers. After reboot, you may login. To use Jae-Won's dotfiles, run `source <(curl https://jaewonchung.me/install-dotfiles.sh)`. Then install miniconda3 with `CONDA_PREFIX=/opt/miniconda3 bash ~/.dotmodules/inventory/miniconda.sh`.
 """
 
 import geni.portal as portal
