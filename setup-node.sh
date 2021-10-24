@@ -116,10 +116,6 @@ TARGET_USER=$1
 TARGET_GROUP=$(id -gn $TARGET_USER)
 TARGET_HOME=$(eval echo "~$TARGET_USER")
 
-if [[ -f $TARGET_HOME/.setup-done ]]; then
-    return
-fi
-
 echo "Configuring $TARGET_USER"
 
 echo "Redirect cache to /data"
