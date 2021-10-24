@@ -1,8 +1,7 @@
 """
-A cluster with N nodes attached to a LAN. With a NFS server and dataset long-term persistancy.
+A cluster of N GPU nodes, attached to a LAN. An NFS server provides long-term persistency.
 
-Instructions:
-Wait for the setup script to finish.
+Instructions: Wait for the setup script to finish. Then GPU nodes will reboot in order to load their NVIDIA drivers. After reboot, you may login. To use Jae-Won's dotfiles, run `source <(curl https://raw.githubusercontent.com/jaywonchung/dotfiles/master/install.sh)`. Then install miniconda3 with `CONDA_PREFIX=/opt/miniconda3 bash ~/.dotmodules/inventory/miniconda.sh`.
 """
 
 import geni.portal as portal
@@ -16,12 +15,12 @@ imageList = [
 
 pc = portal.Context()
 pc.defineParameter("num_nodes", "Number of nodes", portal.ParameterType.INTEGER, 1)
-pc.defineParameter("user_name", "user name to run additional setup script", portal.ParameterType.STRING, "jwnchung")
+pc.defineParameter("user_name", "Username with which to setup the node", portal.ParameterType.STRING, "jwnchung")
+pc.defineParameter("project_group_name", "Name of project group", portal.ParameterType.STRING, "gaia-PG0")
 pc.defineParameter("os_image", "Select OS image", portal.ParameterType.IMAGE, imageList[0], imageList)
-pc.defineParameter("node_hw", "Node hardware to use", portal.ParameterType.NODETYPE, "c6420")
-pc.defineParameter("nfs_hw", "NFS hardware to use", portal.ParameterType.NODETYPE, "c8220")
-pc.defineParameter("setup", "additional setup script", portal.ParameterType.STRING, "setup-node.sh", advanced=True)
-pc.defineParameter("dataset", "Dataset URN backing the NFS storage, leave empty to use an ephermal 200G blockstorage on nfs server", portal.ParameterType.STRING, "", advanced=True)
+pc.defineParameter("node_hw", "GPU Node type to use", portal.ParameterType.NODETYPE, "r7525")
+pc.defineParameter("nfs_hw", "NFS node type to use", portal.ParameterType.NODETYPE, "c8220")
+pc.defineParameter("dataset", "Dataset URN backing the NFS storage, leave empty to use an ephermal 200G blockstorage on the nfs server", portal.ParameterType.STRING, "", advanced=True)
 params = pc.bindParameters()
 
 request = pc.makeRequestRSpec()
@@ -73,12 +72,11 @@ for i in range(params.num_nodes):
     lan.addInterface(intf)
     node.addService(rspec.Execute(shell="bash", command="/local/repository/setup-firewall.sh"))
     node.addService(rspec.Execute(shell="bash", command="/local/repository/nfs-client.sh"))
-    if len(params.setup) > 0:
-        node.addService(
-            rspec.Execute(
-                shell="bash",
-                command="/local/repository/{} {}".format(params.setup, params.user_name)
-            )
+    node.addService(
+        rspec.Execute(
+            shell="bash",
+            command="/local/repository/setup-node.sh {} {}".format(params.user_name, params.project_group_name)
         )
+    )
 
 pc.printRequestRSpec(request)

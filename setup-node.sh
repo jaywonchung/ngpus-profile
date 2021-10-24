@@ -6,14 +6,7 @@ set -ex
 # https://urbanautomaton.com/blog/2014/09/09/redirecting-bash-script-output-to-syslog/
 exec 1> >(logger -s -t $(basename $0)) 2>&1
 
-# is this after a reboot?
-# nvidia-smi
-# if [ "$?" = "0"]; then
-#   exit
-# fi
-
-PROJ_GROUP=gaia-PG0
-SELF_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+PROJ_GROUP="$2"
 
 # whoami
 echo "Running as $(whoami) with groups ($(groups))"
@@ -22,25 +15,6 @@ echo "Running as $(whoami) with groups ($(groups))"
 if [[ $EUID -ne 0 ]]; then
     echo "Escalating to root with sudo"
     exec sudo /bin/bash "$0" "$@"
-fi
-
-# update repo
-echo "Updating profile repo"
-if [[ -d /local/repository ]]; then
-    cd /local/repository
-    chgrp -R $PROJ_GROUP /local/repository
-    chmod -R g+w /local/repository
-    git checkout master
-
-    changed=false
-    git remote update && git status -uno | grep -q 'branch is behind' && changed=true
-    if $changed; then
-        git pull
-        echo "Updated successfully, reexec $0"
-        exec "$0"
-    else
-        echo "Up-to-date"
-    fi
 fi
 
 # am i done
