@@ -123,14 +123,5 @@ chown -R $TARGET_USER:$TARGET_GROUP $TARGET_HOME
 
 TZ='America/Detroit' date > /local/.setup-done
 
-# setup dotfiles for me
-if [[ "$TARGET_USER" = "jwnchung" ]]; then
-  cd "$TARGET_HOME"
-  su "$TARGET_USER"
-  source <(curl https://jaewonchung.me/install-dotfiles.sh)
-  CONDA_PREFIX=/opt/miniconda3 bash ~/.dotmodules/inventory/miniconda.sh
-  sudo reboot
-fi
-
 # for nvidia driver
 reboot
