@@ -13,13 +13,14 @@ echo "Running as $(whoami) with groups ($(groups))"
 
 # i am root now
 if [[ $EUID -ne 0 ]]; then
-    echo "Escalating to root with sudo"
-    exec sudo /bin/bash "$0" "$@"
+  echo "Escalating to root with sudo"
+  exec sudo /bin/bash "$0" "$@"
 fi
 
 # am i done
-if [[ -f /local/.setup-done ]]; then
-    exit
+if [[ -f /.setup-done ]]; then
+  echo "Found /.setup-done, exit."
+  exit
 fi
 
 # mount /tmp as tmpfs
@@ -70,58 +71,66 @@ find /etc/apt/sources.list.d/ -type f -print -delete
 
 # base software
 apt-get update
-apt-get install -y zsh git tmux build-essential cmake htop
+apt-get install -y zsh git tmux build-essential htop apt-transport-https ca-certificates curl gnupg lsb-release
 apt-get autoremove -y
+
+# latest cmake
+wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | sudo tee /etc/apt/trusted.gpg.d/kitware.gpg > /dev/null
+apt-add-repository "deb https://apt.kitware.com/ubuntu/ $(lsb_release -cs) main"
+apt-get update
+apt-get install -y kitware-archive-keyring
+rm /etc/apt/trusted.gpg.d/kitware.gpg
+apt-get install -y cmake
+
+# docker
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --batch --yes --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" > /etc/apt/sources.list.d/docker.list
+apt-get update
+apt-get install -y docker-ce docker-ce-cli containerd.io
 
 # cuda driver
 if lspci | grep -q -i nvidia; then
-    apt-get purge -y nvidia* libnvidia*
-    apt-get install -y nvidia-headless-470-server nvidia-utils-470-server
+  apt-get purge -y nvidia* libnvidia*
+  apt-get install -y nvidia-headless-470-server nvidia-utils-470-server
 
-    modprobe -r nouveau || true
-    modprobe nvidia || true
+  modprobe -r nouveau || true
+  modprobe nvidia || true
 fi
+
+# nvidia-docker
+distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
+curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | apt-key add -
+curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list > /etc/apt/sources.list.d/nvidia-docker.list
+apt-get update
+apt-get install -y nvidia-docker2
+(cat /etc/docker/daemon.json 2>/dev/null || echo "{}") | jq '. + { "default-runtime": "nvidia" }' > tmp.$$.json && mv tmp.$$.json /etc/docker/daemon.json
+# add gpu as generic resource on node
+nvidia-smi --query-gpu=uuid --format=csv,noheader | while read uuid ; do
+    jq --arg value "gpu=$uuid" '."node-generic-resources" |= . + [$value]' < /etc/docker/daemon.json > tmp.$$.json && mv tmp.$$.json /etc/docker/daemon.json
+done
+
+# use /data/docker-data as docker data root directory
+(cat /etc/docker/daemon.json 2>/dev/null || echo "{}") | jq '. + { "data-root": "/data/docker-data" }' > tmp.$$.json && mv tmp.$$.json /etc/docker/daemon.json
+systemctl restart docker
+
+# fix docker directory permission
+chown -R root.root /data/docker-data
+chmod -R g-s /data/docker-data
+
+# block traffic to docker containers
+firewall-cmd --zone=docker --set-target=default --permanent
+firewall-cmd --reload
+systemctl restart docker
 
 echo "Setting default umask"
 sed -i -E 's/^(UMASK\s+)[0-9]+$/\1002/g' /etc/login.defs
 
 # setup home
-TARGET_USER=$1
-TARGET_GROUP=$(id -gn $TARGET_USER)
-TARGET_HOME=$(eval echo "~$TARGET_USER")
+SELF_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+$SELF_DIR/setup-home.sh "$@"
 
-echo "Configuring $TARGET_USER"
-
-echo "Redirect cache to /data"
-mount_unit=$(systemd-escape --path --suffix=mount $TARGET_HOME/.cache)
-cat > /etc/systemd/system/$mount_unit <<EOF
-[Unit]
-Description=Bind $TARGET_HOME/.cache to /data/cache/$TARGET_USER
-
-[Mount]
-What=/data/cache/$TARGET_USER
-Where=$TARGET_HOME/.cache
-Type=none
-Options=bind
-
-[Install]
-WantedBy=default.target
-EOF
-systemctl daemon-reload && systemctl enable --now $mount_unit
-
-# change default shell to zsh
-chsh -s $(which zsh) $TARGET_USER
-
-# fix mounting point
-if [[ -d $TARGET_HOME/my_mounting_point ]]; then
-    umount $TARGET_HOME/my_mounting_point
-fi
-
-# fix permission
-echo "Fixing permission"
-chown -R $TARGET_USER:$TARGET_GROUP $TARGET_HOME
-
-TZ='America/Detroit' date > /local/.setup-done
+# setup done
+TZ='America/Detroit' date > /.setup-done
 
 # for nvidia driver
 reboot
