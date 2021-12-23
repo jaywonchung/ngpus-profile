@@ -71,7 +71,7 @@ find /etc/apt/sources.list.d/ -type f -print -delete
 
 # base software
 apt-get update
-apt-get install -y zsh git tmux build-essential htop apt-transport-https ca-certificates curl gnupg lsb-release
+apt-get install -y zsh git tmux build-essential htop apt-transport-https ca-certificates curl gnupg lsb-release jq
 apt-get autoremove -y
 
 # latest cmake
