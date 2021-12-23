@@ -122,6 +122,32 @@ firewall-cmd --zone=docker --set-target=default --permanent
 firewall-cmd --reload
 systemctl restart docker
 
+# miniconda
+CONDA_PREFIX=/opt/miniconda3
+curl -JOL 'https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh'
+rm -rf "$CONDA_PREFIX"
+bash Miniconda3-latest-Linux-x86_64.sh -b -p $CONDA_PREFIX
+rm Miniconda3-latest-Linux-x86_64.sh
+if ! grep 'conda_setup' /etc/zsh/zshenv; then
+  cat <<EOF >> /etc/zsh/zshenv
+__conda_setup="\$('/opt/miniconda3/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
+if [ \$? -eq 0 ]; then
+    eval "\$__conda_setup"
+else
+    if [ -f "/opt/miniconda3/etc/profile.d/conda.sh" ]; then
+        . "/opt/miniconda3/etc/profile.d/conda.sh"
+    else
+        export PATH="/opt/miniconda3/bin:\$PATH"
+    fi
+fi
+EOF
+fi
+ln -sf $CONDA_PREFIX/etc/profile.d/conda.sh /etc/profile.d
+
+# make sure everyone can install
+chgrp -R $PROJ_GROUP $CONDA_PREFIX
+chmod -R g+w $CONDA_PREFIX
+
 echo "Setting default umask"
 sed -i -E 's/^(UMASK\s+)[0-9]+$/\1002/g' /etc/login.defs
 
