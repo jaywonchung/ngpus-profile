@@ -32,6 +32,9 @@ systemctl daemon-reload && systemctl enable --now $mount_unit
 # change default shell to zsh
 chsh -s $(which zsh) $TARGET_USER
 
+# add user to docker group
+usermod -aG docker $TARGET_USER
+
 # fix mounting point
 if [[ -d $TARGET_HOME/my_mounting_point ]]; then
   umount $TARGET_HOME/my_mounting_point
