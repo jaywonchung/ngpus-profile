@@ -20,4 +20,4 @@ apt-get update && apt-get install -y firewalld
 firewall-cmd --zone=trusted --add-source=192.168.0.0/16
 firewall-cmd --runtime-to-permanent
 
-echo "Successfully setup firewall. Exiting.'
+echo "Successfully setup firewall. Exiting."
