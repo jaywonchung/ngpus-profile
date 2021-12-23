@@ -11,15 +11,15 @@ import geni.rspec.pg as rspec
 # Only Ubuntu images supported.
 imageList = [
     ('urn:publicid:IDN+emulab.net+image+emulab-ops:UBUNTU20-64-STD', 'UBUNTU 20.04'),
-    ('urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU18-64-STD', 'UBUNTU 18.04'),
+    # ('urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU18-64-STD', 'UBUNTU 18.04'),
 ]
 
 pc = portal.Context()
-pc.defineParameter("num_nodes", "Number of nodes", portal.ParameterType.INTEGER, 1)
-pc.defineParameter("user_name", "Username", portal.ParameterType.STRING, "jwnchung")
+pc.defineParameter("num_nodes", "Number of GPU nodes", portal.ParameterType.INTEGER, 1)
+pc.defineParameter("user_names", "Usernames (split with space)", portal.ParameterType.STRING, "jwnchung")
 pc.defineParameter("project_group_name", "Project group name", portal.ParameterType.STRING, "gaia-PG0")
 pc.defineParameter("os_image", "OS image", portal.ParameterType.IMAGE, imageList[0], imageList)
-pc.defineParameter("node_hw", "GPU Node type", portal.ParameterType.NODETYPE, "r7525")
+pc.defineParameter("node_hw", "GPU node type", portal.ParameterType.NODETYPE, "r7525")
 pc.defineParameter("nfs_hw", "NFS node type", portal.ParameterType.NODETYPE, "c8220")
 pc.defineParameter("dataset", "Dataset URN backing the NFS storage, leave empty to use an ephermal 200G blockstorage on the nfs server", portal.ParameterType.STRING, "", advanced=True)
 params = pc.bindParameters()
@@ -56,7 +56,7 @@ if params.dataset:
     dslink.link_multiplexing = True
 else:
     bs = nfsServer.Blockstore("nfs-bs", nfsDirectory)
-    bs.size = "200GB"
+    bs.size = "200GB"  # TODO: Make configurable?
 
 # normal nodes
 for i in range(params.num_nodes):
@@ -64,7 +64,7 @@ for i in range(params.num_nodes):
     node.disk_image = params.os_image
     node.hardware_type = params.node_hw
     bs = node.Blockstore("bs-{}".format(i + 1), "/data")
-    bs.size = "200GB"
+    bs.size = "200GB"  # TODO: Make configurable?
     intf = node.addInterface("if1")
     if node.hardware_type == "r7525":
         # r7525 requires special config to use its normal 25Gbps experimental network
@@ -76,7 +76,7 @@ for i in range(params.num_nodes):
     node.addService(
         rspec.Execute(
             shell="bash",
-            command="/local/repository/setup-node.sh {} {}".format(params.user_name, params.project_group_name)
+            command="/local/repository/setup-node.sh {} {}".format(params.project_group_name, params.user_names)
         )
     )
 

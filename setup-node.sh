@@ -6,7 +6,7 @@ set -ex
 # https://urbanautomaton.com/blog/2014/09/09/redirecting-bash-script-output-to-syslog/
 exec 1> >(logger -s -t $(basename $0)) 2>&1
 
-PROJ_GROUP="$2"
+PROJ_GROUP="$1"
 
 # whoami
 echo "Running as $(whoami) with groups ($(groups))"
@@ -154,7 +154,10 @@ sed -i -E 's/^(UMASK\s+)[0-9]+$/\1002/g' /etc/login.defs
 
 # setup home
 SELF_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-$SELF_DIR/setup-home.sh "$@"
+shift
+for username in "$@"; do
+  $SELF_DIR/setup-home.sh "$username"
+done
 
 # setup done
 TZ='America/Detroit' date > /.setup-done
