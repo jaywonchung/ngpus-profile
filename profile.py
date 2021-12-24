@@ -2,7 +2,7 @@
 
 Instructions:
 
-Wait for the setup script to finish. Then GPU nodes will reboot in order to load their NVIDIA drivers. After reboot, you may login. A 200GB block storage is mounted to `/data`, and `/opt` is mounted from `/data/opt`. So install large software packages inside `/opt`. To use Jae-Won's dotfiles, run `source <(curl https://jaewonchung.me/install-dotfiles.sh)`.
+Wait for the setup script to finish. Then GPU nodes will reboot in order to load their NVIDIA drivers. After reboot, you may login. A configurable size of block storage is mounted to `/data`, and `/opt` is mounted from `/data/opt`. So install large software packages inside `/opt`. To use Jae-Won's dotfiles, run `source <(curl https://jaewonchung.me/install-dotfiles.sh)`.
 """
 
 import geni.portal as portal
@@ -21,7 +21,9 @@ pc.defineParameter("project_group_name", "Project group name", portal.ParameterT
 pc.defineParameter("os_image", "OS image", portal.ParameterType.IMAGE, imageList[0], imageList)
 pc.defineParameter("node_hw", "GPU node type", portal.ParameterType.NODETYPE, "r7525")
 pc.defineParameter("nfs_hw", "NFS node type", portal.ParameterType.NODETYPE, "c8220")
-pc.defineParameter("dataset", "Dataset URN backing the NFS storage, leave empty to use an ephermal 200G blockstorage on the nfs server", portal.ParameterType.STRING, "", advanced=True)
+pc.defineParameter("data_size", "Size of /data", portal.ParameterType.STRING, "200GB")
+pc.defineParameter("nfs_size", "Size of /nfs", portal.ParameterType.STRING, "200GB")
+pc.defineParameter("dataset", "Dataset URN backing the NFS storage, leave empty to use an ephermal blockstorage on the nfs server", portal.ParameterType.STRING, "", advanced=True)
 params = pc.bindParameters()
 
 request = pc.makeRequestRSpec()
@@ -56,7 +58,7 @@ if params.dataset:
     dslink.link_multiplexing = True
 else:
     bs = nfsServer.Blockstore("nfs-bs", nfsDirectory)
-    bs.size = "200GB"  # TODO: Make configurable?
+    bs.size = params.nfs_size
 
 # normal nodes
 for i in range(params.num_nodes):
@@ -64,7 +66,7 @@ for i in range(params.num_nodes):
     node.disk_image = params.os_image
     node.hardware_type = params.node_hw
     bs = node.Blockstore("bs-{}".format(i + 1), "/data")
-    bs.size = "200GB"  # TODO: Make configurable?
+    bs.size = params.data_size
     intf = node.addInterface("if1")
     if node.hardware_type == "r7525":
         # r7525 requires special config to use its normal 25Gbps experimental network
