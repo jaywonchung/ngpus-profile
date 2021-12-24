@@ -2,7 +2,7 @@
 
 Instructions:
 
-Wait for the setup script to finish. Then GPU nodes will reboot in order to load their NVIDIA drivers. After reboot, you may login. A configurable size of block storage is mounted to `/data`, and `/opt` is mounted from `/data/opt`. So install large software packages inside `/opt`. To use Jae-Won's dotfiles, run `source <(curl https://jaewonchung.me/install-dotfiles.sh)`.
+Wait for the setup script to finish. Then GPU nodes will reboot in order to load their NVIDIA drivers. After reboot, you may login. A block storage (of the configured size) is mounted to `/data`, and `/opt` is mounted from `/data/opt`. So install large software packages inside `/opt`. To use Jae-Won's dotfiles, run `source <(curl https://jaewonchung.me/install-dotfiles.sh)`.
 """
 
 import geni.portal as portal
