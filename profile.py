@@ -21,9 +21,9 @@ pc.defineParameter("project_group_name", "Project group name", portal.ParameterT
 pc.defineParameter("os_image", "OS image", portal.ParameterType.IMAGE, imageList[0], imageList)
 pc.defineParameter("node_hw", "GPU node type", portal.ParameterType.NODETYPE, "r7525")
 pc.defineParameter("nfs_hw", "NFS node type", portal.ParameterType.NODETYPE, "c8220")
-pc.defineParameter("data_size", "Size of /data", portal.ParameterType.STRING, "200GB")
-pc.defineParameter("nfs_size", "Size of /nfs", portal.ParameterType.STRING, "200GB")
-pc.defineParameter("dataset", "Dataset URN backing the NFS storage, leave empty to use an ephermal blockstorage on the nfs server", portal.ParameterType.STRING, "", advanced=True)
+pc.defineParameter("data_size", "GPU node local storage size", portal.ParameterType.STRING, "200GB")
+pc.defineParameter("nfs_size", "NFS size (create ephemeral storage)", portal.ParameterType.STRING, "200GB")
+pc.defineParameter("nfs_dataset", "NFS URN (back with remote dataset)", portal.ParameterType.STRING, "")
 params = pc.bindParameters()
 
 request = pc.makeRequestRSpec()
@@ -46,9 +46,9 @@ nfsServer.addService(rspec.Execute(shell="bash", command="/local/repository/nfs-
 
 # Special node that represents the ISCSI device where the dataset resides
 nfsDirectory = "/nfs"
-if params.dataset:
+if params.nfs_dataset:
     dsnode = request.RemoteBlockstore("dsnode", nfsDirectory)
-    dsnode.dataset = params.dataset
+    dsnode.dataset = params.nfs_dataset
     dslink = request.Link("dslink")
     dslink.addInterface(dsnode.interface)
     dslink.addInterface(nfsServer.addInterface())
