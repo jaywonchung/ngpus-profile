@@ -88,27 +88,34 @@ echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] 
 apt-get update
 apt-get install -y docker-ce docker-ce-cli containerd.io
 
-# cuda driver
+# gpu setup
 if lspci | grep -q -i nvidia; then
+  HAS_GPU=1
+else
+  HAS_GPU=0
+fi
+
+if [[ "$HAS_GPU" = 1 ]]; then
+  # cuda driver
   apt-get purge -y nvidia* libnvidia*
   apt-get install -y linux-headers-$(uname -r)
   apt-get install -y nvidia-headless-470-server nvidia-utils-470-server
 
   rmmod nouveau || true
   modprobe nvidia || true
-fi
 
-# nvidia-docker
-distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
-curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | apt-key add -
-curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list > /etc/apt/sources.list.d/nvidia-docker.list
-apt-get update
-apt-get install -y nvidia-docker2
-(cat /etc/docker/daemon.json 2>/dev/null || echo "{}") | jq '. + { "default-runtime": "nvidia" }' > tmp.$$.json && mv tmp.$$.json /etc/docker/daemon.json
-# add gpu as generic resource on node
-nvidia-smi --query-gpu=uuid --format=csv,noheader | while read uuid ; do
-    jq --arg value "gpu=$uuid" '."node-generic-resources" |= . + [$value]' < /etc/docker/daemon.json > tmp.$$.json && mv tmp.$$.json /etc/docker/daemon.json
-done
+  # nvidia-docker
+  distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
+  curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | apt-key add -
+  curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list > /etc/apt/sources.list.d/nvidia-docker.list
+  apt-get update
+  apt-get install -y nvidia-docker2
+  (cat /etc/docker/daemon.json 2>/dev/null || echo "{}") | jq '. + { "default-runtime": "nvidia" }' > tmp.$$.json && mv tmp.$$.json /etc/docker/daemon.json
+  # add gpu as generic resource on node
+  nvidia-smi --query-gpu=uuid --format=csv,noheader | while read uuid ; do
+  jq --arg value "gpu=$uuid" '."node-generic-resources" |= . + [$value]' < /etc/docker/daemon.json > tmp.$$.json && mv tmp.$$.json /etc/docker/daemon.json
+  done
+fi
 
 # use /data/docker-data as docker data root directory
 (cat /etc/docker/daemon.json 2>/dev/null || echo "{}") | jq '. + { "data-root": "/data/docker-data" }' > tmp.$$.json && mv tmp.$$.json /etc/docker/daemon.json
@@ -163,4 +170,6 @@ done
 TZ='America/Detroit' date > /.setup-done
 
 # for nvidia driver
-reboot
+if [[ "$HAS_GPU" = 1 ]]; then
+  reboot
+fi
