@@ -63,8 +63,10 @@ chgrp -R $PROJ_GROUP /data
 chmod -R g+sw /data
 
 # fix /nfs permission
-chgrp -R $PROJ_GROUP /nfs
-chmod -R g+sw /nfs
+if [[ -d /nfs ]]; then
+  chgrp -R $PROJ_GROUP /nfs
+  chmod -R g+sw /nfs
+fi
 
 # remove unused PPAs
 find /etc/apt/sources.list.d/ -type f -print -delete
