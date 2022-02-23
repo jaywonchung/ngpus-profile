@@ -158,6 +158,17 @@ ln -sf $CONDA_PREFIX/etc/profile.d/conda.sh /etc/profile.d
 chgrp -R $PROJ_GROUP $CONDA_PREFIX
 chmod -R g+w $CONDA_PREFIX
 
+# setup BF2 SmartNICs if it's found (r7525)
+if lspci -n | grep 15b3:c2 > /dev/null; then
+  wget https://content.mellanox.com/ofed/MLNX_OFED-5.4-3.1.0.0/MLNX_OFED_LINUX-5.4-3.1.0.0-ubuntu20.04-x86_64.tgz
+  tar -xvf MLNX_OFED_LINUX-5.4-3.1.0.0-ubuntu20.04-x86_64.tgz
+  pushd MLNX_OFED_LINUX-5.4-3.1.0.0-ubuntu20.04-x86_64
+  sudo ./mlnxofedinstall --force
+  popd
+  rm -r MLNX_OFED_LINUX-5.4-3.1.0.0-ubuntu20.04-x86_64.tgz MLNX_OFED_LINUX-5.4-3.1.0.0-ubuntu20.04-x86_64
+fi
+
+# umask
 echo "Setting default umask"
 sed -i -E 's/^(UMASK\s+)[0-9]+$/\1002/g' /etc/login.defs
 
