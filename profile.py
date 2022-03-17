@@ -35,6 +35,12 @@ lan.best_effort = True
 lan.vlan_tagging = True
 lan.link_multiplexing = True
 
+# add bluefield in case of r7525 hw type
+if params.node_hw == "r7525":
+    global linkbf
+    linkbf = request.Link('bluefield')
+    linkbf.type = "generic_100g"
+
 if params.has_nfs:
     # nfs server with special block storage server
     nfsServer = request.RawPC("nfs")
@@ -73,6 +79,12 @@ for i in range(params.num_nodes):
     if node.hardware_type == "r7525":
         # r7525 requires special config to use its normal 25Gbps experimental network
         intf.bandwidth = 25600
+        # Initialize BlueField DPU.
+        bfif = node.addInterface("bf")
+        bfif.addInterface(rspec.IPv4Address(
+            "192.168.10.{}".format(i + 1), "255.255.255.0"))
+        bfif.bandwidth = 100000000
+        linkbf.addInterface(bfif)
     intf.addAddress(rspec.IPv4Address("192.168.1.{}".format(i + 1), "255.255.255.0"))
     lan.addInterface(intf)
     node.addService(rspec.Execute(shell="bash", command="/local/repository/setup-firewall.sh"))
