@@ -15,16 +15,26 @@ imageList = [
 ]
 
 pc = portal.Context()
-pc.defineParameter("num_nodes", "Number of GPU nodes", portal.ParameterType.INTEGER, 1)
-pc.defineParameter("user_names", "Usernames (split with space)", portal.ParameterType.STRING, "jwnchung")
-pc.defineParameter("project_group_name", "Project group name", portal.ParameterType.STRING, "gaia-PG0")
-pc.defineParameter("os_image", "OS image", portal.ParameterType.IMAGE, imageList[0], imageList)
-pc.defineParameter("node_hw", "GPU node type", portal.ParameterType.NODETYPE, "r7525")
-pc.defineParameter("data_size", "GPU node local storage size", portal.ParameterType.STRING, "200GB")
-pc.defineParameter("has_nfs", "Whether to include a NFS node", portal.ParameterType.BOOLEAN, False)
-pc.defineParameter("nfs_hw", "NFS node type", portal.ParameterType.NODETYPE, "c8220")
-pc.defineParameter("nfs_size", "NFS size (create ephemeral storage)", portal.ParameterType.STRING, "200GB")
-pc.defineParameter("nfs_dataset", "NFS URN (back with remote dataset)", portal.ParameterType.STRING, "")
+pc.defineParameter("num_nodes", "Number of GPU nodes",
+                   portal.ParameterType.INTEGER, 1)
+pc.defineParameter("user_names", "Usernames (split with space)",
+                   portal.ParameterType.STRING, "jwnchung")
+pc.defineParameter("project_group_name", "Project group name",
+                   portal.ParameterType.STRING, "gaia-PG0")
+pc.defineParameter("os_image", "OS image",
+                   portal.ParameterType.IMAGE, imageList[0], imageList)
+pc.defineParameter("node_hw", "GPU node type",
+                   portal.ParameterType.NODETYPE, "r7525")
+pc.defineParameter("data_size", "GPU node local storage size",
+                   portal.ParameterType.STRING, "200GB")
+pc.defineParameter("has_nfs", "Whether to include a NFS node",
+                   portal.ParameterType.BOOLEAN, False)
+pc.defineParameter("nfs_hw", "NFS node type",
+                   portal.ParameterType.NODETYPE, "c8220")
+pc.defineParameter("nfs_size", "NFS size (create ephemeral storage)",
+                   portal.ParameterType.STRING, "200GB")
+pc.defineParameter("nfs_dataset", "NFS URN (back with remote dataset)",
+                   portal.ParameterType.STRING, "")
 params = pc.bindParameters()
 
 request = pc.makeRequestRSpec()
@@ -47,10 +57,13 @@ if params.has_nfs:
     nfsServer.disk_image = params.os_image
     nfsServer.hardware_type = params.nfs_hw
     nfsServerInterface = nfsServer.addInterface()
-    nfsServerInterface.addAddress(rspec.IPv4Address("192.168.1.250", "255.255.255.0"))
+    nfsServerInterface.addAddress(
+        rspec.IPv4Address("192.168.1.250", "255.255.255.0"))
     lan.addInterface(nfsServerInterface)
-    nfsServer.addService(rspec.Execute(shell="bash", command="/local/repository/setup-firewall.sh"))
-    nfsServer.addService(rspec.Execute(shell="bash", command="/local/repository/nfs-server.sh"))
+    nfsServer.addService(rspec.Execute(
+        shell="bash", command="/local/repository/setup-firewall.sh"))
+    nfsServer.addService(rspec.Execute(
+        shell="bash", command="/local/repository/nfs-server.sh"))
 
     # Special node that represents the ISCSI device where the dataset resides
     nfsDirectory = "/nfs"
@@ -81,18 +94,22 @@ for i in range(params.num_nodes):
         intf.bandwidth = 25600
         # Initialize BlueField DPU.
         bfif = node.addInterface("bf")
-        bfif.addInterface(rspec.IPv4Address(
+        bfif.addAddress(rspec.IPv4Address(
             "192.168.10.{}".format(i + 1), "255.255.255.0"))
         bfif.bandwidth = 100000000
         linkbf.addInterface(bfif)
-    intf.addAddress(rspec.IPv4Address("192.168.1.{}".format(i + 1), "255.255.255.0"))
+    intf.addAddress(rspec.IPv4Address(
+        "192.168.1.{}".format(i + 1), "255.255.255.0"))
     lan.addInterface(intf)
-    node.addService(rspec.Execute(shell="bash", command="/local/repository/setup-firewall.sh"))
-    node.addService(rspec.Execute(shell="bash", command="/local/repository/nfs-client.sh"))
+    node.addService(rspec.Execute(
+        shell="bash", command="/local/repository/setup-firewall.sh"))
+    node.addService(rspec.Execute(
+        shell="bash", command="/local/repository/nfs-client.sh"))
     node.addService(
         rspec.Execute(
             shell="bash",
-            command="/local/repository/setup-node.sh {} {}".format(params.project_group_name, params.user_names)
+            command="/local/repository/setup-node.sh {} {}".format(
+                params.project_group_name, params.user_names)
         )
     )
 
