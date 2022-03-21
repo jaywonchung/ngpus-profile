@@ -26,7 +26,7 @@ pc.defineParameter("os_image", "OS image",
 pc.defineParameter("node_hw", "GPU node type",
                    portal.ParameterType.NODETYPE, "r7525")
 pc.defineParameter("data_size", "GPU node local storage size",
-                   portal.ParameterType.STRING, "200GB")
+                   portal.ParameterType.STRING, "512GB")
 pc.defineParameter("has_nfs", "Whether to include a NFS node",
                    portal.ParameterType.BOOLEAN, False)
 pc.defineParameter("nfs_hw", "NFS node type",
