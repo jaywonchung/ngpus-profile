@@ -36,7 +36,7 @@ chsh -s $(which zsh) $TARGET_USER
 usermod -aG docker $TARGET_USER
 
 # fix my_mounting_point
-if [[ -d "$TARGET_HOME/my_mounting_point" ]]; then
+if [[ -e "$TARGET_HOME/my_mounting_point" ]]; then
   umount "$TARGET_HOME/my_mounting_point"
   rm -rf "$TARGET_HOME/my_mounting_point"
 fi
