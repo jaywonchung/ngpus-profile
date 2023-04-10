@@ -19,5 +19,12 @@ An NFS server provides long-term persistence.
     ```
 - Run the following to install Jae-Won's dotfiles.
     ```bash
-    source <(curl https://jaewonchung.me/install-dotfiles.sh)
+    source <(curl -L https://jaewonchung.me/install-dotfiles.sh)
     ```
+
+## Misc Information
+
+When distributed training collective communication is hanging, consider the following remedies:
+
+- `NCCL_P2P_DISABLE=1`: According to the [NCCL troubleshooting guide](https://docs.nvidia.com/deeplearning/nccl/user-guide/docs/troubleshooting.html#pci-access-control-services-acs), P2P can hang because r7525 nodes have PCI ACS enabled.
+- `NCCL_SOCKET_IFNAME=ens5f0` and `MASTER_ADDR=192.168.10.1`: This would be using the BlueField SmartNIC for communication between nodes. Note that sometimes, the BF devices in r7525 nodes can be left at a funny state where it is not able to receive and send any data. In that case, reset the NIC following the instructions [here](https://groups.google.com/g/cloudlab-users/c/p04vBvwneN8/m/dXKC6kwSAQAJ).
