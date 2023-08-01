@@ -78,7 +78,7 @@ apt-get autoremove -y
 
 # latest cmake
 wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | sudo tee /etc/apt/trusted.gpg.d/kitware.gpg > /dev/null
-apt-add-repository "deb https://apt.kitware.com/ubuntu/ $(lsb_release -cs) main"
+apt-add-repository -y "deb https://apt.kitware.com/ubuntu/ $(lsb_release -cs) main"
 apt-get update
 apt-get install -y kitware-archive-keyring
 rm /etc/apt/trusted.gpg.d/kitware.gpg
